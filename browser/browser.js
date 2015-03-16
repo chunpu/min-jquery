@@ -1,4 +1,49 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.$ = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var uid = require('uid')
+var _ = require('min-util')
+
+module.exports = Data
+
+function Data() {
+	this.expando = uid()
+	this.cache = []
+}
+
+_.extend(Data.prototype, {
+	  get: function(owner, key) {
+        var ret = this.cache[owner[this.expando]] || {}
+        if (key) {
+            return ret[key]
+        }
+        return ret
+    }
+    , set: function(owner, key, val) {
+        var expando = this.expando
+        var cache = this.cache
+        if (owner[expando] >= 0) {
+            cache[owner[expando]][key] = val
+        } else {
+            var len = cache.length
+            owner[expando] = len
+            cache[len] = {}
+            cache[len][key] = val
+        }
+    }
+    , remove: function(owner, key) {
+        var expando = this.expando
+        var cache = this.cache
+        var len = owner[expando]
+        if (len >= 0) {
+            if (undefined === key) {
+                cache[len] = {}
+            } else {
+                delete cache[len][key]
+            }
+        }
+    }
+})
+
+},{"min-util":15,"uid":16}],2:[function(require,module,exports){
 var $ = require('..')
 
 $.fn.extend({
@@ -8,12 +53,219 @@ $.fn.extend({
 	}
 })
 
-},{"..":5}],2:[function(require,module,exports){
+},{"..":8}],3:[function(require,module,exports){
 require('./util')
 require('./event')
 require('./ready')
+require('./proto-util')
+require('./node-prop')
 
-},{"./event":1,"./ready":3,"./util":4}],3:[function(require,module,exports){
+},{"./event":2,"./node-prop":4,"./proto-util":5,"./ready":6,"./util":7}],4:[function(require,module,exports){
+var _ = require('min-util')
+var $ = require('../')
+var Data = require('./data')
+
+var is = _.is
+var data_user = new Data
+var data_priv = new Data
+
+$.extend({
+	  access: function(elems, fn, key, val, isChain) {
+		var i = 0
+		if (key && 'object' === typeof key) {
+   			// set multi k, v
+   			for (i in key) {
+   				$.access(elems, fn, i, key[i], true)
+   			}
+   		} else if (undefined === val) {
+   			// get value
+   			var ret
+   			if (elems[0]) { // TODO text, html should be ''
+   				ret = fn(elems[0], key)
+   			}
+   			if (!isChain) {
+   				return ret
+   			}
+   		} else {
+   			// set one k, v
+   			for (i = 0; i < elems.length; i++) {
+   				fn(elems[i], key, val)
+   			}
+   		}
+   		return elems
+   	}
+    , attr: function(elem, key, val) {
+        if (undefined === val) {
+            return elem.getAttribute(key)
+        } else if (null === val) {
+            return elem.removeAttribute(key)
+        }
+        elem.setAttribute(key, '' + val)
+    }
+    , text: function(elem, key, val) {
+        if (undefined !== val) return elem.textContent = '' + val
+        var nodeType = elem.nodeType
+        if (3 == nodeType || 4 == nodeType) {
+            return elem.nodeValue
+        }
+        if ('string' == typeof elem.textContent) {
+            return elem.textContent
+        }
+        var ret = ''
+        for (elem = elem.firstChild; elem; elem = elem.nextSibling) {
+            ret += $.text(elem)
+        }
+        return ret
+    }
+    , html: function(elem, key, val) {
+        if (undefined === val) {
+            return elem.innerHTML
+        }
+        elem.innerHTML = '' + val
+    }
+    , prop: function(elem, key, val) {
+        if (undefined === val) {
+            return elem[key]
+        }
+        elem[key] = val
+    }
+    , css: function(elem, key, val) {
+        var style = elem.style || {}
+        if (undefined === val) {
+            var ret = style[key]
+            if (ret) return ret
+            if (window.getComputedStyle) {
+                return getComputedStyle(elem, null)[key]
+            }
+        } else {
+            style[key] = val
+        }
+    }
+    , data: function(elem, key, val) {
+        if (undefined !== val) {
+            // set val
+            data_user.set(elem, key, val)
+        } else {
+            if (key && 'object' == typeof key) {
+                // set multi
+                for (var k in key) {
+                    $.data(elem, k, key[k])
+                }
+            } else {
+                // get
+                return data_user.get(elem, key)
+            }
+        }
+    }
+    , _data: function(elem, key, val) {
+        if (undefined !== val) {
+            // set val
+            data_priv.set(elem, key, val)
+        } else {
+            if (key && 'object' == typeof key) {
+                // set multi
+                for (var k in key) {
+                    $._data(elem, k, key[k])
+                }
+            } else {
+                // get
+                return data_priv.get(elem, key)
+            }
+        }
+    }
+    , removeData: function(elem, key) {
+        data_user.remove(elem, key)
+    }
+})
+
+$.fn.extend({
+      text: function(val) {
+        return $.access(this, $.text, null, val)
+    }
+    , html: function(val) {
+        return $.access(this, $.html, null, val)
+    }
+    , attr: function(key, val) {
+        return $.access(this, $.attr, key, val)
+    }
+    , prop: function(key, val) {
+        return $.access(this, $.prop, key, val)
+    }
+    , css: function(key, val) {
+        return $.access(this, $.css, key, val)
+    }
+    , data: function(key, val) {
+        return $.access(this, $.data, key, val)
+    }
+    , _data: function(key, val) {
+        return $.access(this, $.data, key, val)
+    }
+    , removeData: function(key) {
+        return $.access(this, $.removeData, key, undefined, true)
+    }
+})
+
+},{"../":8,"./data":1,"min-util":15}],5:[function(require,module,exports){
+var $ = require('../')
+var _ = require('min-util')
+
+var is = _.is
+
+$.fn.extend({
+	  toArray: function() {
+		return $.toArray(this)
+	}
+	, pushStack: function(nodes) {
+		var ret = $(nodes)
+		ret.prevObject = this
+		ret.context = this.context
+		return ret
+	}
+	, get: function(i) {
+		if (!is.num(i)) return this.toArray()
+		if (i > 0) {
+			return this[i]
+		}
+		return this.get(i + this.length)
+	}
+	, each: function(fn) {
+		_.each(this, function(val, i) {
+			return fn.call(val, i, val, this)
+		})
+		return this
+	}
+	, map: function(fn) {
+		var arr = _.map(this, function(val, i) {
+			arr[i] = fn.call(val, i, val, this)
+		})
+		return this.pushStack(arr)
+	}
+	, filter: function(fn) {
+		var arr = _.filter(this, function(val, i) {
+			return fn.call(val, i, val, this)
+		})
+		return this.pushStack(arr)
+	}
+	, end: function() {
+		return this.prevObject || $()
+	}
+	, eq: function(i) {
+		if (i < 0) return this.eq(i + this.length)
+		return this.pushStack([this[i]])
+	}
+	, first: function() {
+		return this.eq(0)
+	}
+	, last: function() {
+		return this.eq(-1)
+	}
+	, slice: function(start, end) {
+		var arr = _.slice(this, start, end)
+		return this.pushStack(arr)
+	}
+})
+
+},{"../":8,"min-util":15}],6:[function(require,module,exports){
 (function (global){
 var $ = require('..')
 var ready = require('min-ready')()
@@ -47,7 +299,7 @@ function loaded() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"..":5,"min-ready":10}],4:[function(require,module,exports){
+},{"..":8,"min-ready":13}],7:[function(require,module,exports){
 (function (global){
 var $ = require('../')
 var _ = require('min-util')
@@ -104,7 +356,7 @@ $.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":5,"min-parse":8,"min-util":12}],5:[function(require,module,exports){
+},{"../":8,"min-parse":11,"min-util":15}],8:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var parse = require('min-parse')
@@ -151,7 +403,7 @@ proto.extend({jquery: true})
 require('./extend')
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./extend":2,"min-find":6,"min-parse":8,"min-util":12}],6:[function(require,module,exports){
+},{"./extend":3,"min-find":9,"min-parse":11,"min-util":15}],9:[function(require,module,exports){
 (function (global){
 module.exports = exports = find
 
@@ -205,7 +457,7 @@ function query(selector, box) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],7:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 (function (global){
 var is = exports
 
@@ -365,7 +617,7 @@ is.element = function(elem) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],8:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var is = require('min-is')
@@ -426,9 +678,9 @@ function evalJSON(str) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-is":9,"min-util":12}],9:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],10:[function(require,module,exports){
+},{"min-is":12,"min-util":15}],12:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}],13:[function(require,module,exports){
 var _ = require('min-util')
 var is = _.is
 
@@ -485,7 +737,7 @@ function exec(val) {
 	}
 }
 
-},{"min-util":11}],11:[function(require,module,exports){
+},{"min-util":14}],14:[function(require,module,exports){
 var is = require('min-is')
 
 var _ = exports
@@ -748,7 +1000,7 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
-},{"min-is":7}],12:[function(require,module,exports){
+},{"min-is":10}],15:[function(require,module,exports){
 var is = require('min-is')
 
 var _ = exports
@@ -1013,5 +1265,24 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
-},{"min-is":7}]},{},[5])(5)
+},{"min-is":10}],16:[function(require,module,exports){
+/**
+ * Export `uid`
+ */
+
+module.exports = uid;
+
+/**
+ * Create a `uid`
+ *
+ * @param {String} len
+ * @return {String} uid
+ */
+
+function uid(len) {
+  len = len || 7;
+  return Math.random().toString(35).substr(2, len);
+}
+
+},{}]},{},[8])(8)
 });

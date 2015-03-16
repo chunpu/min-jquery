@@ -1,3 +1,5 @@
 require('./util')
 require('./event')
 require('./ready')
+require('./proto-util')
+require('./node-prop')

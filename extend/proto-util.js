@@ -1,4 +1,4 @@
-var $ = require('$')
+var $ = require('../')
 var _ = require('min-util')
 
 var is = _.is

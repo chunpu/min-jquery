@@ -1,4 +1,4 @@
-describe('core', function() {
+describe('util', function() {
 
     it('basic', function() {
         assert($, '$')
