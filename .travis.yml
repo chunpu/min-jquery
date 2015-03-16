@@ -1,0 +1,9 @@
+language: node_js
+branches:
+  only:
+  - gh-pages
+env:
+  global:
+  - SAUCE_USERNAME: chunpu2
+  - secure: IlQmmbx/oMJk/STwO1BtIGRQDI72ypfBeg2yFDyKsjPFl6JYDuXR0ytCsU4xSemgwyT/teBE8t0ZQ8KRqZH8RFbql0ZA7cyAa3XiPzPRTdEaov1S0PryJs7yyXuRhEl3D/awAaZWx2hPI1Okl5x7/2oRar1uvqQT6te3e6reRwQ=
+script: npm run test-travis

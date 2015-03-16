@@ -8,10 +8,7 @@ var knownTypes = 'boolean number string function array date regexp object error'
 $.extend({
 	  noop: _.noop
 	, toArray: function(arr, ret) {
-		_.each(arr, function(val) {
-			ret.push(val)
-		})
-		return ret
+		return $.merge(ret, arr)
 	}
 	, each: function(arr, fn) {
 		_.each(arr, function(val, i) {
@@ -32,8 +29,11 @@ $.extend({
 	, makeArray: _.slice
 	, map: _.map
 	, merge: function(first, second) {
-		_.each(second, function(val) {
-			first.push(val)
+		first = first || []
+		var len = first.length || 0
+		_.each(second, function(val, i) {
+			first.length++
+			first[len + i] = val
 		})
 		return first
 	}
@@ -43,12 +43,7 @@ $.extend({
 	, parseHTML: parse.html
 	, parseJSON: parse.json
 	, parseXML: parse.xml
-	, proxy: function(fn, ctx) {
-		if (is.str(ctx)) {
-			return _.bind(fn[ctx], fn)
-		}
-		return _.bind(fn, ctx)
-	}
+	, proxy: _.bind
 	, trim: _.trim
 	, type: function(val) {
 		var ret = is._class(val)

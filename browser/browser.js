@@ -8,7 +8,12 @@ $.fn.extend({
 	}
 })
 
-},{"..":4}],2:[function(require,module,exports){
+},{"..":5}],2:[function(require,module,exports){
+require('./util')
+require('./event')
+require('./ready')
+
+},{"./event":1,"./ready":3,"./util":4}],3:[function(require,module,exports){
 (function (global){
 var $ = require('..')
 var ready = require('min-ready')()
@@ -42,7 +47,7 @@ function loaded() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"..":4,"min-ready":9}],3:[function(require,module,exports){
+},{"..":5,"min-ready":10}],4:[function(require,module,exports){
 (function (global){
 var $ = require('../')
 var _ = require('min-util')
@@ -54,10 +59,7 @@ var knownTypes = 'boolean number string function array date regexp object error'
 $.extend({
 	  noop: _.noop
 	, toArray: function(arr, ret) {
-		_.each(arr, function(val) {
-			ret.push(val)
-		})
-		return ret
+		return $.merge(ret, arr)
 	}
 	, each: function(arr, fn) {
 		_.each(arr, function(val, i) {
@@ -78,8 +80,11 @@ $.extend({
 	, makeArray: _.slice
 	, map: _.map
 	, merge: function(first, second) {
-		_.each(second, function(val) {
-			first.push(val)
+		first = first || []
+		var len = first.length || 0
+		_.each(second, function(val, i) {
+			first.length++
+			first[len + i] = val
 		})
 		return first
 	}
@@ -89,12 +94,7 @@ $.extend({
 	, parseHTML: parse.html
 	, parseJSON: parse.json
 	, parseXML: parse.xml
-	, proxy: function(fn, ctx) {
-		if (is.str(ctx)) {
-			return _.bind(fn[ctx], fn)
-		}
-		return _.bind(fn, ctx)
-	}
+	, proxy: _.bind
 	, trim: _.trim
 	, type: function(val) {
 		var ret = is._class(val)
@@ -104,7 +104,7 @@ $.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":4,"min-parse":7,"min-util":11}],4:[function(require,module,exports){
+},{"../":5,"min-parse":8,"min-util":12}],5:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var parse = require('min-parse')
@@ -146,12 +146,12 @@ $.extend = proto.extend = function() {
 	return _.extend.apply(_, arr)
 }
 
-$.fn.extend({
-	jquery: true
-})
+proto.extend({jquery: true})
+
+require('./extend')
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-find":5,"min-parse":7,"min-util":11}],5:[function(require,module,exports){
+},{"./extend":2,"min-find":6,"min-parse":8,"min-util":12}],6:[function(require,module,exports){
 (function (global){
 module.exports = exports = find
 
@@ -205,7 +205,7 @@ function query(selector, box) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 (function (global){
 var is = exports
 
@@ -365,7 +365,7 @@ is.element = function(elem) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var is = require('min-is')
@@ -426,9 +426,9 @@ function evalJSON(str) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-is":8,"min-util":11}],8:[function(require,module,exports){
-arguments[4][6][0].apply(exports,arguments)
-},{"dup":6}],9:[function(require,module,exports){
+},{"min-is":9,"min-util":12}],9:[function(require,module,exports){
+arguments[4][7][0].apply(exports,arguments)
+},{"dup":7}],10:[function(require,module,exports){
 var _ = require('min-util')
 var is = _.is
 
@@ -485,7 +485,7 @@ function exec(val) {
 	}
 }
 
-},{"min-util":10}],10:[function(require,module,exports){
+},{"min-util":11}],11:[function(require,module,exports){
 var is = require('min-is')
 
 var _ = exports
@@ -748,7 +748,7 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
-},{"min-is":6}],11:[function(require,module,exports){
+},{"min-is":7}],12:[function(require,module,exports){
 var is = require('min-is')
 
 var _ = exports
@@ -764,7 +764,7 @@ function extend(dst) {
 				for (var key in hash) {
 					if (is.owns(hash, key)) {
 						var val = hash[key]
-						if (is.undef(val) || val === dst[key] || val == dst) continue
+						if (is.undef(val) || val === dst[key] || val === dst) continue
 						dst[key] = val
 					}
 				}
@@ -1013,5 +1013,5 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
-},{"min-is":6}]},{},[4,1,2,3])(4)
+},{"min-is":7}]},{},[5])(5)
 });

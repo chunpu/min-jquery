@@ -38,6 +38,6 @@ $.extend = proto.extend = function() {
 	return _.extend.apply(_, arr)
 }
 
-$.fn.extend({
-	jquery: true
-})
+proto.extend({jquery: true})
+
+require('./extend')
