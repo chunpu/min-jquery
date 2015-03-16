@@ -1,4 +1,131 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.$ = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var querystring = require('min-qs')
+var $ = require('../')
+
+function request(url, opt, cb) {
+    // cb can only be called once
+    if (url && 'object' == typeof url) {
+        return $.ajax(url.url, url, cb)
+    }
+
+    if ('function' == typeof opt) {
+        cb = opt
+        opt = {}
+    }
+
+    var hasCalled = false
+    var callback = function(err, res, body) {
+        if (hasCalled) return
+        cb = cb || $.noop
+        hasCalled = true
+        cb(err, res, body)
+    }
+
+    var dataType = opt.dataType || 'text' // html, script, jsonp, text
+
+    var req
+    var isJsonp = false
+    if ('jsonp' == dataType) {
+        isJsonp = true
+        var jsonp = opt.jsonp || ajaxSetting.jsonp
+        var jsonpCallback = opt.jsonpCallback || $.expando + '_' + $.now()
+        var keyTmpl = jsonp + '=?'
+        var query = $.extend({}, opt.data)
+        if (url.indexOf(keyTmpl) != -1) {
+            url.replace(keyTmpl, jsonp + '=' + jsonpCallback)
+        } else {
+            query[jsonp] = jsonpCallback
+        }
+        if (!opt.cache) {
+            query._ = $.now()
+        }
+        url = bindQuery2url(url, query)
+
+        dataType = 'script'
+        window[jsonpCallback] = function(ret) { // only get first one
+            callback(null, {
+                status: 200
+            }, ret)
+            window[jsonpCallback] = null
+        }
+    }
+    if ('script' == dataType) {
+        req = getScript(url, opt, isJsonp ? null : callback)
+    } else if (/html|text/.test(dataType)) {
+        req = getXhr(url, opt, callback)
+    }
+    req.send()
+
+    if (opt.timeout) {
+        setTimeout(function() {
+            req.abort() // should never call callback, because user know he abort it
+            callback('timeout', {
+                status: 0,
+                readyState: 0,
+                statusText: 'timeout'
+            })
+            if (isJsonp) {
+                window[jsonpCallback] = $.noop
+            }
+        }, opt.timeout)
+    }
+}
+
+$.ajax = function(url, opt) {
+    // TODO fuck the status, statusText, even for jsonp
+    var ret = {}
+    request(url, opt, function(err, xhr, body) {
+        xhr = xhr || {}
+        var jqxhr = {
+            status: xhr.status,
+            statusText: xhr.statusText,
+            readyState: xhr.readyState
+        }
+        $.extend(ret, jqxhr)
+        // success, timeout, error
+        var resText = 'success'
+        if (err || 200 != ret.status) {
+            resText = 'error'
+            if ('timeout' == err) {
+                resText = 'timeout'
+            }
+            opt.error && opt.error(ret, resText, xhr.statusText)
+        } else {
+            opt.success && opt.success(body || xhr.responseText, resText, ret)
+        }
+        opt.complete && opt.complete(ret, resText)
+    })
+    return ret
+}
+
+$.each(['get', 'post'], function(i, method) {
+    $[method] = function(url, data, callback, dataType) {
+        if ('function' == typeof data) {
+            dataType = callback
+            callback = data
+            data = undefined
+        }
+        $.ajax(url, {
+            type: method,
+            dataType: dataType,
+            data: data,
+            success: callback
+        })
+    }
+})
+
+function bindQuery2url(url, query) {
+    if (-1 == url.indexOf('?')) {
+        url += '?'
+    }
+    var last = url.charAt(url.length - 1)
+    if ('&' != last && '?' != last) {
+        url += '&'
+    }
+    return url + querystring.stringify(query)
+}
+
+},{"../":11,"min-qs":16}],2:[function(require,module,exports){
 var uid = require('uid')
 var _ = require('min-util')
 
@@ -43,25 +170,187 @@ _.extend(Data.prototype, {
     }
 })
 
-},{"min-util":16,"uid":17}],2:[function(require,module,exports){
-var $ = require('..')
+},{"min-util":19,"uid":20}],3:[function(require,module,exports){
+var $ = require('../')
+var _ = require('min-util')
 
-$.fn.extend({
-	on: function() {
-	},
-	off: function() {
-	}
+var display = 'display'
+
+_.each('show hide toggle'.split(' '), function(key) {
+	$.fn[key] = function() {
+        return this.each(function(i, el) {
+            var act = key
+            var old = $.css(el, display)
+            var isHiden = 'none' == old
+            if ('toggle' == key) {
+                act = 'hide'
+                if (isHiden) {
+                    act = 'show'
+                }
+            }
+            if ('show' == act && isHiden) {
+                var css = $._data(el, display) || 'block'
+                $.css(el, display, css)
+            } else if ('hide' == act && !isHiden) {
+                $._data(el, display, old)
+                $.css(el, display, 'none')
+            }
+        })
+    }
 })
 
-},{"..":9}],3:[function(require,module,exports){
+},{"../":11,"min-util":19}],4:[function(require,module,exports){
+var $ = require('../')
+
+var eventNS = 'events'
+
+$.Event = function(src, props) {
+    if (!(this instanceof $.Event)) {
+        return new $.Event(src, props)
+    }
+    src = src || {}
+    if ('string' == typeof src) {
+        src = {
+            type: src
+        }
+    }
+    this.originalEvent = src
+    this.type = src.type
+    this.target = src.target || src.srcElement
+    if (props) {
+        $.extend(this, props)
+    }
+}
+
+$.extend({
+    on: function(elem, type, handler, data, selector) {
+        var events = $._data(elem, eventNS)
+        var arr = type.split('.')
+        type = arr[0]
+        var namespace = arr[1]
+        if (!events) {
+            // set data priv
+            events = {}
+            $._data(elem, eventNS, events)
+        }
+        if (!events[type]) {
+            events[type] = []
+            if (elem.addEventListener) {
+                elem.addEventListener(type, miniHandler, false)
+            } else if (elem.attachEvent) {
+                elem.attachEvent('on' + type, miniHandler)
+            }
+        }
+        var typeEvents = events[type]
+        var ev = {
+            handler: handler,
+            namespace: namespace,
+            selector: selector,
+            type: type
+        }
+        typeEvents.push(ev)
+    },
+    trigger: function(elem, ev) {
+        var events = $._data(elem, eventNS)
+        if ('string' == typeof ev) {
+            // self trigger, ev = type
+            ev = $.Event(ev, {
+                target: elem
+            })
+        }
+        var typeEvents = events[ev.type]
+        if (typeEvents) {
+            typeEvents = typeEvents.slice() // avoid self remove
+            var len = typeEvents.length
+            for (var i = 0; i < len; i++) {
+                var obj = typeEvents[i]
+                var ret = obj.handler.call(elem, ev)
+                if (false === ret) {
+                    ev.preventDefault()
+                    ev.stopPropagation()
+                }
+            }
+        }
+    },
+    off: function(elem, ev, handler) {
+        var events = $._data(elem, eventNS)
+        if (!events) return
+
+        ev = ev || ''
+        if (!ev || '.' == ev.charAt(0)) {
+            // namespace
+            for (var key in events) {
+                $.off(elem, key + ev, handler)
+            }
+            return
+        }
+
+        var arr = ev.split('.')
+        var type = arr[0] // always have
+        var namespace = arr[1]
+        var typeEvents = events[type]
+        if (typeEvents) {
+            for (var i = typeEvents.length - 1; i >= 0; i--) {
+                var x = typeEvents[i]
+                var shouldRemove = true
+                if (namespace && namespace != x.namespace) {
+                    shouldRemove = false
+                }
+                if (handler && handler != x.handler) {
+                    shouldRemove = false
+                }
+                if (shouldRemove) {
+                    typeEvents.splice(i, 1)
+                }
+            }
+        }
+    }
+})
+
+$.fn.extend({
+    eventHandler: function(events, handler, fn) {
+        if (!events) {
+            return this.each(function() {
+                fn(this)
+            })
+        }
+        events = events.split(' ')
+        return this.each(function() {
+            for (var i = 0; i < events.length; i++) {
+                fn(this, events[i], handler)
+            }
+        })
+    },
+    on: function(events, handler) {
+        return this.eventHandler(events, handler, $.on)
+    },
+    off: function(events, handler) {
+        return this.eventHandler(events, handler, $.off)
+    },
+    trigger: function(events, handler) {
+        return this.eventHandler(events, handler, $.trigger)
+    }
+})
+
+function miniHandler(ev) {
+    ev = $.Event(ev)
+    var elem = this
+    if (!elem.nodeType)
+        elem = ev.target
+    $.trigger(elem, ev)
+}
+
+},{"../":11}],5:[function(require,module,exports){
 require('./util')
 require('./event')
 require('./ready')
 require('./proto-util')
 require('./node-prop')
 require('./node-method')
+require('./effect')
+require('./ajax')
 
-},{"./event":2,"./node-method":4,"./node-prop":5,"./proto-util":6,"./ready":7,"./util":8}],4:[function(require,module,exports){
+},{"./ajax":1,"./effect":3,"./event":4,"./node-method":6,"./node-prop":7,"./proto-util":8,"./ready":9,"./util":10}],6:[function(require,module,exports){
 var _ = require('min-util')
 var $ = require('../')
 
@@ -130,7 +419,7 @@ $.fn.extend({
     }
 })
 
-},{"../":9,"min-util":16}],5:[function(require,module,exports){
+},{"../":11,"min-util":19}],7:[function(require,module,exports){
 var _ = require('min-util')
 var $ = require('../')
 var Data = require('./data')
@@ -275,7 +564,7 @@ $.fn.extend({
     }
 })
 
-},{"../":9,"./data":1,"min-util":16}],6:[function(require,module,exports){
+},{"../":11,"./data":2,"min-util":19}],8:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -335,7 +624,7 @@ $.fn.extend({
 	}
 })
 
-},{"../":9,"min-util":16}],7:[function(require,module,exports){
+},{"../":11,"min-util":19}],9:[function(require,module,exports){
 (function (global){
 var $ = require('..')
 var ready = require('min-ready')()
@@ -369,7 +658,7 @@ function loaded() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"..":9,"min-ready":14}],8:[function(require,module,exports){
+},{"..":11,"min-ready":17}],10:[function(require,module,exports){
 (function (global){
 var $ = require('../')
 var _ = require('min-util')
@@ -426,7 +715,7 @@ $.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":9,"min-parse":12,"min-util":16}],9:[function(require,module,exports){
+},{"../":11,"min-parse":14,"min-util":19}],11:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var parse = require('min-parse')
@@ -476,7 +765,7 @@ proto.extend({jquery: true})
 require('./extend')
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./extend":3,"min-find":10,"min-parse":12,"min-util":16}],10:[function(require,module,exports){
+},{"./extend":5,"min-find":12,"min-parse":14,"min-util":19}],12:[function(require,module,exports){
 (function (global){
 module.exports = exports = find
 
@@ -530,7 +819,7 @@ function query(selector, box) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 (function (global){
 var is = exports
 
@@ -690,7 +979,7 @@ is.element = function(elem) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var is = require('min-is')
@@ -751,9 +1040,53 @@ function evalJSON(str) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-is":13,"min-util":16}],13:[function(require,module,exports){
-arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],14:[function(require,module,exports){
+},{"min-is":15,"min-util":19}],15:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{"dup":13}],16:[function(require,module,exports){
+exports.parse = function(qs, sep, eq) {
+	qs += ''
+	sep = sep || '&'
+	eq = eq || '='
+	var decode = exports.decode || decodeURIComponent
+
+	var ret = {}
+	qs = qs.split(sep)
+	for (var i = 0; i < qs.length; i++) {
+		var arr = qs[i].split(eq)
+		if (2 == arr.length) {
+			var k = arr[0]
+			var v = arr[1]
+			if (k) {
+				try {
+					k = decode(k)
+					v = decode(v)
+					ret[k] = v
+				} catch (ignore) {}
+			}
+		}
+	}
+	return ret
+}
+
+exports.stringify = function(obj, sep, eq) {
+	obj = obj || {}
+	sep = sep || '&'
+	eq = eq || '='
+	var encode = exports.encode || encodeURIComponent
+
+	var ret = []
+	for (var k in obj) {
+		if (Object.hasOwnProperty.call(obj, k)) {
+			var v = obj[k]
+			if (v || '' == v || 0 == v) {
+				ret.push(encode(k) + eq + encode(v))
+			}
+		}
+	}
+	return ret.join(sep)
+}
+
+},{}],17:[function(require,module,exports){
 var _ = require('min-util')
 var is = _.is
 
@@ -810,7 +1143,7 @@ function exec(val) {
 	}
 }
 
-},{"min-util":15}],15:[function(require,module,exports){
+},{"min-util":18}],18:[function(require,module,exports){
 var is = require('min-is')
 
 var _ = exports
@@ -1073,7 +1406,7 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
-},{"min-is":11}],16:[function(require,module,exports){
+},{"min-is":13}],19:[function(require,module,exports){
 var is = require('min-is')
 
 var _ = exports
@@ -1338,7 +1671,7 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
-},{"min-is":11}],17:[function(require,module,exports){
+},{"min-is":13}],20:[function(require,module,exports){
 /**
  * Export `uid`
  */
@@ -1357,5 +1690,5 @@ function uid(len) {
   return Math.random().toString(35).substr(2, len);
 }
 
-},{}]},{},[9])(9)
+},{}]},{},[11])(11)
 });
