@@ -1,0 +1,32 @@
+{
+  "name": "min-jquery",
+  "version": "1.1.3",
+  "description": "really fucking simple small jquery",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "browser": "browserify index.js extend/*.js -s $ > browser/browser.js"
+  },
+  "author": "chunpu",
+  "license": "ISC",
+  "dependencies": {
+    "min-find": "^1.1.3",
+    "min-is": "^1.1.4",
+    "min-parse": "^1.1.0",
+    "min-ready": "^1.0.6",
+    "min-util": "^1.2.2"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chunpu/min-jquery.git"
+  },
+  "keywords": [
+    "jquery",
+    "browserify"
+  ],
+  "bugs": {
+    "url": "https://github.com/chunpu/min-jquery/issues"
+  },
+  "homepage": "https://github.com/chunpu/min-jquery"
+}
