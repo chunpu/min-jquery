@@ -43,7 +43,7 @@ _.extend(Data.prototype, {
     }
 })
 
-},{"min-util":15,"uid":16}],2:[function(require,module,exports){
+},{"min-util":16,"uid":17}],2:[function(require,module,exports){
 var $ = require('..')
 
 $.fn.extend({
@@ -53,14 +53,84 @@ $.fn.extend({
 	}
 })
 
-},{"..":8}],3:[function(require,module,exports){
+},{"..":9}],3:[function(require,module,exports){
 require('./util')
 require('./event')
 require('./ready')
 require('./proto-util')
 require('./node-prop')
+require('./node-method')
 
-},{"./event":2,"./node-prop":4,"./proto-util":5,"./ready":6,"./util":7}],4:[function(require,module,exports){
+},{"./event":2,"./node-method":4,"./node-prop":5,"./proto-util":6,"./ready":7,"./util":8}],4:[function(require,module,exports){
+var _ = require('min-util')
+var $ = require('../')
+
+$.buildFragment = function(elems, context) {
+	context = context || document
+	var fragment = context.createDocumentFragment()
+	for (var i = 0, elem; elem = elems[i++];) {
+		var nodes = []
+		if ('string' == typeof elem) {
+			if (elem.indexOf('<') == -1) {
+				nodes.push(context.createTextNode(elem))
+			} else {
+				var div = document.createElement('div')
+				div.innerHTML = elem
+				$.toArray(div.childNodes, nodes)
+			}
+		} else if ('object' == typeof elem) {
+			if (elem.nodeType) {
+				nodes.push(elem)
+			} else {
+				$.toArray(elem, nodes)
+			}
+
+		}
+	}
+	for (var i = 0, node; node = nodes[i++];) {
+		fragment.appendChild(node)
+	}
+	return fragment
+}
+
+
+$.fn.extend({
+      domManip: function(args, fn) {
+        return this.each(function() {
+            var node = $.buildFragment(args)
+            // always build to one node(fragment)
+            fn.call(this, node)
+        })
+    }
+    , remove: function() {
+        return this.domManip(arguments, function() {
+            if (this.parentNode) {
+                this.parentNode.removeChild(this)
+            }
+        })
+    }
+    , before: function() {
+        return this.domManip(arguments, function(elem) {
+            if (elem.parentNode) {
+                elem.parentNode.insertBefore(elem, this)
+            }
+        })
+    }
+    , after: function() {
+        return this.domManip(arguments, function(elem) {
+            if (elem.parentNode) {
+                elem.parentNode.insertBefore(elem, this.nextSibling)
+            }
+        })
+    }
+    , append: function() {
+        return this.domManip(arguments, function(elem) {
+            this.appendChild(elem)
+        })
+    }
+})
+
+},{"../":9,"min-util":16}],5:[function(require,module,exports){
 var _ = require('min-util')
 var $ = require('../')
 var Data = require('./data')
@@ -205,7 +275,7 @@ $.fn.extend({
     }
 })
 
-},{"../":8,"./data":1,"min-util":15}],5:[function(require,module,exports){
+},{"../":9,"./data":1,"min-util":16}],6:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -265,7 +335,7 @@ $.fn.extend({
 	}
 })
 
-},{"../":8,"min-util":15}],6:[function(require,module,exports){
+},{"../":9,"min-util":16}],7:[function(require,module,exports){
 (function (global){
 var $ = require('..')
 var ready = require('min-ready')()
@@ -299,7 +369,7 @@ function loaded() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"..":8,"min-ready":13}],7:[function(require,module,exports){
+},{"..":9,"min-ready":14}],8:[function(require,module,exports){
 (function (global){
 var $ = require('../')
 var _ = require('min-util')
@@ -356,7 +426,7 @@ $.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":8,"min-parse":11,"min-util":15}],8:[function(require,module,exports){
+},{"../":9,"min-parse":12,"min-util":16}],9:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var parse = require('min-parse')
@@ -370,6 +440,8 @@ var is = _.is
 function $(val, box) {
 	if (is.fn(val)) return $(doc).ready(val)
 	if (!(this instanceof $)) return new $(val, box)
+
+	this.length = 0
 	if (!val) return
 
 	if (is.string(val)) {
@@ -381,12 +453,13 @@ function $(val, box) {
 	}
 
 	if (!is.arraylike(val)) val = [val]
-	for (var i = 0; i < val.length; i++) {
-		this.push(val[i])
-	}
-}
 
-_.inherits($, Array)
+	var len = val.length
+	for (var i = 0; i < len; i++) {
+		this[i] = val[i]
+	}
+	this.length = len
+}
 
 var proto = $.fn = $.prototype
 
@@ -403,7 +476,7 @@ proto.extend({jquery: true})
 require('./extend')
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./extend":3,"min-find":9,"min-parse":11,"min-util":15}],9:[function(require,module,exports){
+},{"./extend":3,"min-find":10,"min-parse":12,"min-util":16}],10:[function(require,module,exports){
 (function (global){
 module.exports = exports = find
 
@@ -457,7 +530,7 @@ function query(selector, box) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function (global){
 var is = exports
 
@@ -617,7 +690,7 @@ is.element = function(elem) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var is = require('min-is')
@@ -678,9 +751,9 @@ function evalJSON(str) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-is":12,"min-util":15}],12:[function(require,module,exports){
-arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}],13:[function(require,module,exports){
+},{"min-is":13,"min-util":16}],13:[function(require,module,exports){
+arguments[4][11][0].apply(exports,arguments)
+},{"dup":11}],14:[function(require,module,exports){
 var _ = require('min-util')
 var is = _.is
 
@@ -737,7 +810,7 @@ function exec(val) {
 	}
 }
 
-},{"min-util":14}],14:[function(require,module,exports){
+},{"min-util":15}],15:[function(require,module,exports){
 var is = require('min-is')
 
 var _ = exports
@@ -1000,7 +1073,7 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
-},{"min-is":10}],15:[function(require,module,exports){
+},{"min-is":11}],16:[function(require,module,exports){
 var is = require('min-is')
 
 var _ = exports
@@ -1265,7 +1338,7 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
-},{"min-is":10}],16:[function(require,module,exports){
+},{"min-is":11}],17:[function(require,module,exports){
 /**
  * Export `uid`
  */
@@ -1284,5 +1357,5 @@ function uid(len) {
   return Math.random().toString(35).substr(2, len);
 }
 
-},{}]},{},[8])(8)
+},{}]},{},[9])(9)
 });

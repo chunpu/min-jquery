@@ -10,6 +10,8 @@ var is = _.is
 function $(val, box) {
 	if (is.fn(val)) return $(doc).ready(val)
 	if (!(this instanceof $)) return new $(val, box)
+
+	this.length = 0
 	if (!val) return
 
 	if (is.string(val)) {
@@ -21,12 +23,13 @@ function $(val, box) {
 	}
 
 	if (!is.arraylike(val)) val = [val]
-	for (var i = 0; i < val.length; i++) {
-		this.push(val[i])
-	}
-}
 
-_.inherits($, Array)
+	var len = val.length
+	for (var i = 0; i < len; i++) {
+		this[i] = val[i]
+	}
+	this.length = len
+}
 
 var proto = $.fn = $.prototype
 
