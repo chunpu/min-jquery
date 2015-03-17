@@ -25,3 +25,12 @@ _.each('width height'.split(' '), function(type) {
 
 	})
 })
+
+$.fn.offset = function() {
+	var el = this[0]
+	if (!el) return
+	return {
+		left: el.offsetLeft,
+		top: el.offsetTop
+	}
+}

@@ -1,3 +1,4 @@
 - addClass
 - clone
 - appendTo
+- fix width height auto px
