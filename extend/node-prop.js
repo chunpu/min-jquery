@@ -6,6 +6,13 @@ var is = _.is
 var data_user = new Data
 var data_priv = new Data
 
+var getComputedStyle = global.getComputedStyle || function(el) {
+	if (el && el.currentStyle) {
+		return el.currentStyle
+	}
+	return {}
+}
+
 $.extend({
 	  access: function(elems, fn, key, val, isChain) {
 		var i = 0
@@ -71,9 +78,10 @@ $.extend({
         if (undefined === val) {
             var ret = style[key]
             if (ret) return ret
-            if (window.getComputedStyle) {
-                return getComputedStyle(elem, null)[key]
-            }
+            //if (window.getComputedStyle) {
+            //    return getComputedStyle(elem, null)[key]
+            //}
+			return getComputedStyle(elem, null)[key]
         } else {
             style[key] = val
         }

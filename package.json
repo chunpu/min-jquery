@@ -1,11 +1,11 @@
 {
   "name": "min-jquery",
-  "version": "1.1.9",
+  "version": "1.2.3",
   "description": "really fucking simple small jquery",
   "main": "index.js",
   "scripts": {
-    "test": "browserify tests/*.js | poor",
-    "poor": "browserify tests/*.js | poor -b ie:6..8,chrome -R dot",
+    "test": "browserify tests/_global.js tests/*.js | poor",
+    "poor": "browserify tests/_global.js tests/*.js | poor -b ie:6..8,chrome -R dot",
     "test-travis": "npm run poor",
     "browser": "browserify index.js -s $ > browser/browser.js",
     "readme": "pretty-readme > readme.md",
@@ -19,7 +19,7 @@
     "min-parse": "^1.1.0",
     "min-qs": "^1.0.3",
     "min-ready": "^1.0.6",
-    "min-util": "^1.2.2",
+    "min-util": "^1.2.9",
     "uid": "0.0.2"
   },
   "devDependencies": {

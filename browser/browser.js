@@ -125,7 +125,31 @@ function bindQuery2url(url, query) {
     return url + querystring.stringify(query)
 }
 
-},{"../":11,"min-qs":16}],2:[function(require,module,exports){
+},{"../":13,"min-qs":18}],2:[function(require,module,exports){
+var _ = require('min-util')
+var $ = require('../')
+
+$.fn.extend({
+	addClass: function(str) {
+		str = _.trim(str)
+		return this.each(function() {
+			this.className += ' ' + str
+		})
+	},
+	removeClass: function(name) {
+		return this.each(function() {
+			var arr = getClassList(this.className)
+			this.className = _.without(arr, name).join(' ')
+		})
+	}
+})
+
+function getClassList(str) {
+	var arr = _.trim(str).split(/ +/)
+	return _.uniq(arr)
+}
+
+},{"../":13,"min-util":21}],3:[function(require,module,exports){
 var uid = require('uid')
 var _ = require('min-util')
 
@@ -170,7 +194,36 @@ _.extend(Data.prototype, {
     }
 })
 
-},{"min-util":19,"uid":20}],3:[function(require,module,exports){
+},{"min-util":21,"uid":22}],4:[function(require,module,exports){
+var $ = require('../')
+var _ = require('min-util')
+
+_.each('width height'.split(' '), function(type) {
+	_.each(['inner', 'outer', ''], function(opt) {
+
+		var funcName = type
+		var upper = type.charAt(0).toUpperCase() + type.substr(1)
+		if (opt) {
+			funcName = opt + upper
+		}
+
+		$.fn[funcName] = function() {
+			var el = this[0]
+			if (!el) return
+			var ret = 0
+			if ('outer' == opt) {
+				ret = el['offset' + upper]
+			} else {
+				// TODO too complex!
+				ret = el['offset' + upper]
+			}
+			return parseFloat(ret) || 0
+		}
+
+	})
+})
+
+},{"../":13,"min-util":21}],5:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -199,7 +252,7 @@ _.each('show hide toggle'.split(' '), function(key) {
     }
 })
 
-},{"../":11,"min-util":19}],4:[function(require,module,exports){
+},{"../":13,"min-util":21}],6:[function(require,module,exports){
 var $ = require('../')
 
 var eventNS = 'events'
@@ -340,7 +393,7 @@ function miniHandler(ev) {
     $.trigger(elem, ev)
 }
 
-},{"../":11}],5:[function(require,module,exports){
+},{"../":13}],7:[function(require,module,exports){
 require('./util')
 require('./event')
 require('./ready')
@@ -349,8 +402,10 @@ require('./node-prop')
 require('./node-method')
 require('./effect')
 require('./ajax')
+require('./dimension')
+require('./class-list')
 
-},{"./ajax":1,"./effect":3,"./event":4,"./node-method":6,"./node-prop":7,"./proto-util":8,"./ready":9,"./util":10}],6:[function(require,module,exports){
+},{"./ajax":1,"./class-list":2,"./dimension":4,"./effect":5,"./event":6,"./node-method":8,"./node-prop":9,"./proto-util":10,"./ready":11,"./util":12}],8:[function(require,module,exports){
 var _ = require('min-util')
 var $ = require('../')
 
@@ -419,7 +474,8 @@ $.fn.extend({
     }
 })
 
-},{"../":11,"min-util":19}],7:[function(require,module,exports){
+},{"../":13,"min-util":21}],9:[function(require,module,exports){
+(function (global){
 var _ = require('min-util')
 var $ = require('../')
 var Data = require('./data')
@@ -427,6 +483,13 @@ var Data = require('./data')
 var is = _.is
 var data_user = new Data
 var data_priv = new Data
+
+var getComputedStyle = global.getComputedStyle || function(el) {
+	if (el && el.currentStyle) {
+		return el.currentStyle
+	}
+	return {}
+}
 
 $.extend({
 	  access: function(elems, fn, key, val, isChain) {
@@ -493,9 +556,10 @@ $.extend({
         if (undefined === val) {
             var ret = style[key]
             if (ret) return ret
-            if (window.getComputedStyle) {
-                return getComputedStyle(elem, null)[key]
-            }
+            //if (window.getComputedStyle) {
+            //    return getComputedStyle(elem, null)[key]
+            //}
+			return getComputedStyle(elem, null)[key]
         } else {
             style[key] = val
         }
@@ -564,7 +628,8 @@ $.fn.extend({
     }
 })
 
-},{"../":11,"./data":2,"min-util":19}],8:[function(require,module,exports){
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../":13,"./data":3,"min-util":21}],10:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -622,9 +687,15 @@ $.fn.extend({
 		var arr = _.slice(this, start, end)
 		return this.pushStack(arr)
 	}
+	, find: function(str) {
+		var arr = _.map(this, function(box) {
+			return $(str, box)
+		})
+		return this.pushStack(_.union.apply(_, arr))
+	}
 })
 
-},{"../":11,"min-util":19}],9:[function(require,module,exports){
+},{"../":13,"min-util":21}],11:[function(require,module,exports){
 (function (global){
 var $ = require('..')
 var ready = require('min-ready')()
@@ -658,7 +729,7 @@ function loaded() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"..":11,"min-ready":17}],10:[function(require,module,exports){
+},{"..":13,"min-ready":19}],12:[function(require,module,exports){
 (function (global){
 var $ = require('../')
 var _ = require('min-util')
@@ -715,7 +786,7 @@ $.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":11,"min-parse":14,"min-util":19}],11:[function(require,module,exports){
+},{"../":13,"min-parse":16,"min-util":21}],13:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var parse = require('min-parse')
@@ -765,7 +836,7 @@ proto.extend({jquery: true})
 require('./extend')
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./extend":5,"min-find":12,"min-parse":14,"min-util":19}],12:[function(require,module,exports){
+},{"./extend":7,"min-find":14,"min-parse":16,"min-util":21}],14:[function(require,module,exports){
 (function (global){
 module.exports = exports = find
 
@@ -819,7 +890,7 @@ function query(selector, box) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 (function (global){
 var is = exports
 
@@ -979,7 +1050,7 @@ is.element = function(elem) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var is = require('min-is')
@@ -1040,9 +1111,9 @@ function evalJSON(str) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-is":15,"min-util":19}],15:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"dup":13}],16:[function(require,module,exports){
+},{"min-is":17,"min-util":21}],17:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{"dup":15}],18:[function(require,module,exports){
 exports.parse = function(qs, sep, eq) {
 	qs += ''
 	sep = sep || '&'
@@ -1086,7 +1157,7 @@ exports.stringify = function(obj, sep, eq) {
 	return ret.join(sep)
 }
 
-},{}],17:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 var _ = require('min-util')
 var is = _.is
 
@@ -1143,7 +1214,7 @@ function exec(val) {
 	}
 }
 
-},{"min-util":18}],18:[function(require,module,exports){
+},{"min-util":20}],20:[function(require,module,exports){
 var is = require('min-is')
 
 var _ = exports
@@ -1406,7 +1477,7 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
-},{"min-is":13}],19:[function(require,module,exports){
+},{"min-is":15}],21:[function(require,module,exports){
 var is = require('min-is')
 
 var _ = exports
@@ -1447,11 +1518,6 @@ _.keys = function(hash) {
 }
 
 _.extend = extend
-
-function fix(arr) {
-	if (!is.arraylike(arr)) arr = []
-	return arr
-}
 
 function identity(val) {
 	return val
@@ -1560,6 +1626,21 @@ _.find = function(arr, fn) {
 	return ret
 }
 
+_.without = function(arr) {
+	var other = _.slice(arguments, 1)
+	return _.difference(arr, other)
+}
+
+_.difference = function(arr, other) {
+	var ret = []
+	_.each(arr, function(val) {
+		if (!_.has(other, val)) {
+			ret.push(val)
+		}
+	})
+	return ret
+}	
+
 function slice(arr, from, end) {
 	var ret = []
 	each(arr, function(item) {
@@ -1639,7 +1720,7 @@ _.flatten = function(arrs) {
 }
 
 _.union = function() {
-	return _.uniq(flatten(arguments))
+	return _.uniq(_.flatten(arguments))
 }
 
 _.bind = function(fn, ctx) {
@@ -1671,7 +1752,7 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
-},{"min-is":13}],20:[function(require,module,exports){
+},{"min-is":15}],22:[function(require,module,exports){
 /**
  * Export `uid`
  */
@@ -1690,5 +1771,5 @@ function uid(len) {
   return Math.random().toString(35).substr(2, len);
 }
 
-},{}]},{},[11])(11)
+},{}]},{},[13])(13)
 });

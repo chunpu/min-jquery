@@ -1,0 +1,3 @@
+- addClass
+- clone
+- appendTo

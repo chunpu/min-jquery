@@ -55,4 +55,10 @@ $.fn.extend({
 		var arr = _.slice(this, start, end)
 		return this.pushStack(arr)
 	}
+	, find: function(str) {
+		var arr = _.map(this, function(box) {
+			return $(str, box)
+		})
+		return this.pushStack(_.union.apply(_, arr))
+	}
 })
