@@ -1,6 +1,53 @@
 var querystring = require('min-qs')
 var $ = require('../')
 
+function getScript(url, opt, cb) {
+    var head = $('head')[0]
+    var script = document.createElement('script')
+
+    function finish(err) {
+        if (script) {
+            if (cb) {
+                // fake xhr
+                var xhr = {
+                    status: 200
+                }
+                if (err) {
+                    xhr = {
+                        status: 0
+                    }
+                }
+                cb(err, xhr)
+            }
+            script.onload = script.onerror = script.onreadystatechange = null
+            head.removeChild(script)
+            script = null
+        }
+    }
+
+    function send() {
+        script.async = true
+        script.src = url
+        script.onload = script.onerror = script.onreadystatechange = function(ev) {
+            var state = script.readyState
+            if (ev && 'error' == ev.type) { // old browser has no onerror
+                finish('error')
+            } else if (!state || /loaded|complete/.test(state)) { // new browser has no state
+                finish(null)
+            }
+        }
+        head.appendChild(script)
+    }
+
+    return {
+        abort: function() {
+            cb = null
+            finish()
+        },
+        send: send
+    }
+}
+
 function request(url, opt, cb) {
     // cb can only be called once
     if (url && 'object' == typeof url) {
@@ -27,7 +74,8 @@ function request(url, opt, cb) {
     if ('jsonp' == dataType) {
         isJsonp = true
         var jsonp = opt.jsonp || ajaxSetting.jsonp
-        var jsonpCallback = opt.jsonpCallback || $.expando + '_' + $.now()
+        var jsonpCallback = opt.jsonpCallback || [$.expando, $.now(), Math.random()].join('_')
+        jsonpCallback = jsonpCallback.replace(/[^\w|$]/g, '')
         var keyTmpl = jsonp + '=?'
         var query = $.extend({}, opt.data)
         if (url.indexOf(keyTmpl) != -1) {
