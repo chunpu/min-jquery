@@ -315,139 +315,140 @@ var $ = require('../')
 var eventNS = 'events'
 
 $.Event = function(src, props) {
-    if (!(this instanceof $.Event)) {
-        return new $.Event(src, props)
-    }
-    src = src || {}
-    if ('string' == typeof src) {
-        src = {
-            type: src
-        }
-    }
-    this.originalEvent = src
-    this.type = src.type
-    this.target = src.target || src.srcElement
-    if (props) {
-        $.extend(this, props)
-    }
+	if (!(this instanceof $.Event)) {
+		return new $.Event(src, props)
+	}
+	src = src || {}
+	if ('string' == typeof src) {
+		src = {
+			type: src
+		}
+	}
+	this.originalEvent = src
+	this.type = src.type
+	this.target = src.target || src.srcElement
+	if (props) {
+		$.extend(this, props)
+	}
 }
 
 $.extend({
-    on: function(elem, type, handler, data, selector) {
-        var events = $._data(elem, eventNS)
-        var arr = type.split('.')
-        type = arr[0]
-        var namespace = arr[1]
-        if (!events) {
-            // set data priv
-            events = {}
-            $._data(elem, eventNS, events)
-        }
-        if (!events[type]) {
-            events[type] = []
-            if (elem.addEventListener) {
-                elem.addEventListener(type, miniHandler, false)
-            } else if (elem.attachEvent) {
-                elem.attachEvent('on' + type, miniHandler)
-            }
-        }
-        var typeEvents = events[type]
-        var ev = {
-            handler: handler,
-            namespace: namespace,
-            selector: selector,
-            type: type
-        }
-        typeEvents.push(ev)
-    },
-    trigger: function(elem, ev) {
-        var events = $._data(elem, eventNS)
-        if ('string' == typeof ev) {
-            // self trigger, ev = type
-            ev = $.Event(ev, {
-                target: elem
-            })
-        }
-        var typeEvents = events[ev.type]
-        if (typeEvents) {
-            typeEvents = typeEvents.slice() // avoid self remove
-            var len = typeEvents.length
-            for (var i = 0; i < len; i++) {
-                var obj = typeEvents[i]
-                var ret = obj.handler.call(elem, ev)
-                if (false === ret) {
-                    ev.preventDefault()
-                    ev.stopPropagation()
-                }
-            }
-        }
-    },
-    off: function(elem, ev, handler) {
-        var events = $._data(elem, eventNS)
-        if (!events) return
+	on: function(elem, type, handler, data, selector) {
+		var events = $._data(elem, eventNS)
+		var arr = type.split('.')
+		type = arr[0]
+		var namespace = arr[1]
+		if (!events) {
+			// set data priv
+			events = {}
+			$._data(elem, eventNS, events)
+		}
+		if (!events[type]) {
+			events[type] = []
+			if (elem.addEventListener) {
+				elem.addEventListener(type, miniHandler, false)
+			} else if (elem.attachEvent) {
+				elem.attachEvent('on' + type, miniHandler)
+			}
+		}
+		var typeEvents = events[type]
+		var ev = {
+			handler: handler,
+			namespace: namespace,
+			selector: selector,
+			type: type
+		}
+		typeEvents.push(ev)
+	},
+	trigger: function(elem, ev) {
+		var events = $._data(elem, eventNS)
+		if ('string' == typeof ev) {
+			// self trigger, ev = type
+			ev = $.Event(ev, {
+				target: elem
+			})
+		}
+		var typeEvents = events[ev.type]
+		if (typeEvents) {
+			typeEvents = typeEvents.slice() // avoid self remove
+			var len = typeEvents.length
+			for (var i = 0; i < len; i++) {
+				var obj = typeEvents[i]
+				var ret = obj.handler.call(elem, ev)
+				if (false === ret) {
+					ev = ev.originalEvent || ev
+					ev.preventDefault()
+					ev.stopPropagation()
+				}
+			}
+		}
+	},
+	off: function(elem, ev, handler) {
+		var events = $._data(elem, eventNS)
+		if (!events) return
 
-        ev = ev || ''
-        if (!ev || '.' == ev.charAt(0)) {
-            // namespace
-            for (var key in events) {
-                $.off(elem, key + ev, handler)
-            }
-            return
-        }
+		ev = ev || ''
+		if (!ev || '.' == ev.charAt(0)) {
+			// namespace
+			for (var key in events) {
+				$.off(elem, key + ev, handler)
+			}
+			return
+		}
 
-        var arr = ev.split('.')
-        var type = arr[0] // always have
-        var namespace = arr[1]
-        var typeEvents = events[type]
-        if (typeEvents) {
-            for (var i = typeEvents.length - 1; i >= 0; i--) {
-                var x = typeEvents[i]
-                var shouldRemove = true
-                if (namespace && namespace != x.namespace) {
-                    shouldRemove = false
-                }
-                if (handler && handler != x.handler) {
-                    shouldRemove = false
-                }
-                if (shouldRemove) {
-                    typeEvents.splice(i, 1)
-                }
-            }
-        }
-    }
+		var arr = ev.split('.')
+		var type = arr[0] // always have
+		var namespace = arr[1]
+		var typeEvents = events[type]
+		if (typeEvents) {
+			for (var i = typeEvents.length - 1; i >= 0; i--) {
+				var x = typeEvents[i]
+				var shouldRemove = true
+				if (namespace && namespace != x.namespace) {
+					shouldRemove = false
+				}
+				if (handler && handler != x.handler) {
+					shouldRemove = false
+				}
+				if (shouldRemove) {
+					typeEvents.splice(i, 1)
+				}
+			}
+		}
+	}
 })
 
 $.fn.extend({
-    eventHandler: function(events, handler, fn) {
-        if (!events) {
-            return this.each(function() {
-                fn(this)
-            })
-        }
-        events = events.split(' ')
-        return this.each(function() {
-            for (var i = 0; i < events.length; i++) {
-                fn(this, events[i], handler)
-            }
-        })
-    },
-    on: function(events, handler) {
-        return this.eventHandler(events, handler, $.on)
-    },
-    off: function(events, handler) {
-        return this.eventHandler(events, handler, $.off)
-    },
-    trigger: function(events, handler) {
-        return this.eventHandler(events, handler, $.trigger)
-    }
+	eventHandler: function(events, handler, fn) {
+		if (!events) {
+			return this.each(function() {
+				fn(this)
+			})
+		}
+		events = events.split(' ')
+		return this.each(function() {
+			for (var i = 0; i < events.length; i++) {
+				fn(this, events[i], handler)
+			}
+		})
+	},
+	on: function(events, handler) {
+		return this.eventHandler(events, handler, $.on)
+	},
+	off: function(events, handler) {
+		return this.eventHandler(events, handler, $.off)
+	},
+	trigger: function(events, handler) {
+		return this.eventHandler(events, handler, $.trigger)
+	}
 })
 
 function miniHandler(ev) {
-    ev = $.Event(ev)
-    var elem = this
-    if (!elem.nodeType)
-        elem = ev.target
-    $.trigger(elem, ev)
+	ev = $.Event(ev)
+	var elem = this
+	if (!elem.nodeType)
+		elem = ev.target
+	$.trigger(elem, ev)
 }
 
 },{"../":13}],7:[function(require,module,exports){
@@ -827,9 +828,7 @@ $.extend({
 		})
 		return first
 	}
-	, now: function() {
-		return +new Date
-	}
+	, now: _.now
 	, parseHTML: parse.html
 	, parseJSON: parse.json
 	, parseXML: parse.xml
@@ -1562,6 +1561,10 @@ function extend(dst) {
 
 _.noop = function() {}
 
+_.now = function() {
+	return +new Date
+}
+
 _.keys = function(hash) {
 	var ret = []
 	if (hash) {
@@ -1628,6 +1631,7 @@ function each(arr, fn, custom) {
 		// default is stop on false
 		if (false !== opt[stopKey] && false === ret) break
 	}
+
 	return arr
 }
 
@@ -1698,6 +1702,27 @@ _.difference = function(arr, other) {
 	return ret
 }	
 
+_.asyncMap = function(arr, fn, cb) {
+	var ret = []
+	var count = 0
+	var hasDone = false
+	each(arr, function(arg, i) {
+		fn(arg, function(err, val) {
+			if (hasDone) return
+			count++
+			if (err) {
+				hasDone = true
+				return cb(err)
+			}
+			ret[i] = val
+			if (count == arr.length) {
+				hasDone = true
+				cb(null, ret)
+			}
+		})
+	})
+}
+
 function slice(arr, from, end) {
 	var ret = []
 	each(arr, function(item) {
@@ -1764,6 +1789,14 @@ _.trim = function(str) {
 	return ('' + str).replace(rtrim, '')
 }
 
+_.capitalize = function(str) {
+	if (str || 0 == str) {
+		str += ''
+		return str.charAt(0).toUpperCase() + str.substr(1)
+	}
+	return ''
+}
+
 _.flatten = function(arrs) {
 	var ret = []
 	each(arrs, function(arr) {
@@ -1781,6 +1814,11 @@ _.union = function() {
 }
 
 _.bind = function(fn, ctx) {
+	if (is.str(ctx)) {
+		var obj = fn
+		fn = obj[ctx]
+		ctx = obj
+	}
 	if (!is.fn(fn)) return fn
 	var args = slice(arguments, 2)
 	ctx = ctx || this

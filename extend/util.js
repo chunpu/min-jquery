@@ -37,9 +37,7 @@ $.extend({
 		})
 		return first
 	}
-	, now: function() {
-		return +new Date
-	}
+	, now: _.now
 	, parseHTML: parse.html
 	, parseJSON: parse.json
 	, parseXML: parse.xml

@@ -1,6 +1,6 @@
 {
   "name": "min-jquery",
-  "version": "1.2.5",
+  "version": "1.2.7",
   "description": "really fucking simple small jquery",
   "main": "index.js",
   "scripts": {
@@ -14,12 +14,12 @@
   "author": "chunpu",
   "license": "ISC",
   "dependencies": {
-    "min-find": "^1.1.3",
-    "min-is": "^1.1.4",
-    "min-parse": "^1.1.0",
-    "min-qs": "^1.0.3",
-    "min-ready": "^1.0.6",
-    "min-util": "^1.2.9",
+    "min-find": "latest",
+    "min-is": "latest",
+    "min-parse": "latest",
+    "min-qs": "latest",
+    "min-ready": "latest",
+    "min-util": "latest",
     "uid": "0.0.2"
   },
   "devDependencies": {
