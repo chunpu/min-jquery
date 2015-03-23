@@ -173,76 +173,59 @@ function bindQuery2url(url, query) {
     return url + querystring.stringify(query)
 }
 
-},{"../":13,"min-qs":18}],2:[function(require,module,exports){
+},{"../":12,"min-qs":18}],2:[function(require,module,exports){
 var _ = require('min-util')
 var $ = require('../')
 
-$.fn.extend({
-	addClass: function(str) {
-		str = _.trim(str)
-		return this.each(function() {
-			this.className += ' ' + str
-		})
+// https://developer.mozilla.org/en-US/docs/Web/API/Element/classList
+function ClassList(elem) {}
+
+var proto = ClassList.prototype
+
+_.extend(proto, {
+	add: function() {
+		var classes = classListGetter(this)
+		this.className = _.union(classes, arguments).join(' ')
 	},
-	removeClass: function(name) {
+	remove: function() {
+		var classes = classListGetter(this)
+		this.className = _.difference(classes, arguments).join(' ')
+	},
+	contains: function(name) {
+		return _.has(classListGetter(this), name)
+	},
+	toggle: function(name, force) {
+		var has = proto.contains.call(this, name)
+		var method = 'add'
+		if (true != force) {
+			if (has || false == force) {
+				method = 'remove'
+			}
+		}
+		proto[method].call(this, name)
+	}
+})
+
+function classListGetter(el) {
+	return _.trim(el.className).split(/\s+/)
+}
+
+_.each('add remove toggle'.split(' '), function(key) {
+	$.fn[key + 'Class'] = function() {
+		var args = arguments
 		return this.each(function() {
-			var arr = getClassList(this.className)
-			this.className = _.without(arr, name).join(' ')
+			proto[key].apply(this, args)
 		})
 	}
 })
 
-function getClassList(str) {
-	var arr = _.trim(str).split(/ +/)
-	return _.uniq(arr)
+$.fn.hasClass = function(name) {
+	return _.every(this, function(el) {
+		return proto.contains.call(el, name)
+	})
 }
 
-},{"../":13,"min-util":21}],3:[function(require,module,exports){
-var uid = require('uid')
-var _ = require('min-util')
-
-module.exports = Data
-
-function Data() {
-	this.expando = uid()
-	this.cache = []
-}
-
-_.extend(Data.prototype, {
-	  get: function(owner, key) {
-        var ret = this.cache[owner[this.expando]] || {}
-        if (key) {
-            return ret[key]
-        }
-        return ret
-    }
-    , set: function(owner, key, val) {
-        var expando = this.expando
-        var cache = this.cache
-        if (owner[expando] >= 0) {
-            cache[owner[expando]][key] = val
-        } else {
-            var len = cache.length
-            owner[expando] = len
-            cache[len] = {}
-            cache[len][key] = val
-        }
-    }
-    , remove: function(owner, key) {
-        var expando = this.expando
-        var cache = this.cache
-        var len = owner[expando]
-        if (len >= 0) {
-            if (undefined === key) {
-                cache[len] = {}
-            } else {
-                delete cache[len][key]
-            }
-        }
-    }
-})
-
-},{"min-util":21,"uid":22}],4:[function(require,module,exports){
+},{"../":12,"min-util":20}],3:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -280,7 +263,7 @@ $.fn.offset = function() {
 	}
 }
 
-},{"../":13,"min-util":21}],5:[function(require,module,exports){
+},{"../":12,"min-util":20}],4:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -309,7 +292,7 @@ _.each('show hide toggle'.split(' '), function(key) {
     }
 })
 
-},{"../":13,"min-util":21}],6:[function(require,module,exports){
+},{"../":12,"min-util":20}],5:[function(require,module,exports){
 var $ = require('../')
 
 var eventNS = 'events'
@@ -451,7 +434,7 @@ function miniHandler(ev) {
 	$.trigger(elem, ev)
 }
 
-},{"../":13}],7:[function(require,module,exports){
+},{"../":12}],6:[function(require,module,exports){
 require('./util')
 require('./event')
 require('./ready')
@@ -463,7 +446,7 @@ require('./ajax')
 require('./dimension')
 require('./class-list')
 
-},{"./ajax":1,"./class-list":2,"./dimension":4,"./effect":5,"./event":6,"./node-method":8,"./node-prop":9,"./proto-util":10,"./ready":11,"./util":12}],8:[function(require,module,exports){
+},{"./ajax":1,"./class-list":2,"./dimension":3,"./effect":4,"./event":5,"./node-method":7,"./node-prop":8,"./proto-util":9,"./ready":10,"./util":11}],7:[function(require,module,exports){
 var _ = require('min-util')
 var $ = require('../')
 
@@ -532,11 +515,11 @@ $.fn.extend({
     }
 })
 
-},{"../":13,"min-util":21}],9:[function(require,module,exports){
+},{"../":12,"min-util":20}],8:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var $ = require('../')
-var Data = require('./data')
+var Data = require('min-data')
 
 var is = _.is
 var data_user = new Data
@@ -687,7 +670,7 @@ $.fn.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":13,"./data":3,"min-util":21}],10:[function(require,module,exports){
+},{"../":12,"min-data":13,"min-util":20}],9:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -753,7 +736,7 @@ $.fn.extend({
 	}
 })
 
-},{"../":13,"min-util":21}],11:[function(require,module,exports){
+},{"../":12,"min-util":20}],10:[function(require,module,exports){
 (function (global){
 var $ = require('..')
 var ready = require('min-ready')()
@@ -787,7 +770,7 @@ function loaded() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"..":13,"min-ready":19}],12:[function(require,module,exports){
+},{"..":12,"min-ready":19}],11:[function(require,module,exports){
 (function (global){
 var $ = require('../')
 var _ = require('min-util')
@@ -842,7 +825,7 @@ $.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":13,"min-parse":16,"min-util":21}],13:[function(require,module,exports){
+},{"../":12,"min-parse":17,"min-util":20}],12:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var parse = require('min-parse')
@@ -858,6 +841,7 @@ function $(val, box) {
 	if (!(this instanceof $)) return new $(val, box)
 
 	this.length = 0
+
 	if (!val) return
 
 	if (is.string(val)) {
@@ -892,7 +876,76 @@ proto.extend({jquery: true})
 require('./extend')
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./extend":7,"min-find":14,"min-parse":16,"min-util":21}],14:[function(require,module,exports){
+},{"./extend":6,"min-find":15,"min-parse":17,"min-util":20}],13:[function(require,module,exports){
+var uid = require('muid')
+
+module.exports = Data
+
+function Data() {
+	this.expando = uid()
+	this.cache = [null]
+}
+
+var proto = Data.prototype
+
+proto.get = function(owner, key) {
+	var data = this.getData(owner)
+	if (null == key) {
+		return data
+	}
+	return data[key]
+}
+
+proto.set = function(owner, key, value) {
+	var data = this.getData(owner, true)
+	data[key] = value
+	return owner
+}
+
+proto.remove = function(owner, key) {
+	if (undefined === key) {
+		this.discard(owner)
+	} else {
+		var data = this.getData(owner)
+		delete data[key]
+	}
+	return owner
+}
+
+proto.getData = function(owner, shouldCreate) {
+	var data = {}
+	if (owner) {
+		var count = owner[this.expando]
+		var cache = this.cache
+		if (count) {
+			return cache[count]
+		}
+		if (shouldCreate) {
+			owner[this.expando] = cache.length
+			cache.push(data)
+		}
+	}
+	return data
+}
+
+proto.discard = function(owner) {
+	if (owner && owner[this.expando]) {
+		delete owner[this.expando]
+	}
+}
+
+},{"muid":14}],14:[function(require,module,exports){
+module.exports = muid
+
+muid.prefix = ''
+
+function muid(len) {
+	len = len || 7
+	var random = Math.random().toString(35).substr(2, len)
+	return muid.prefix + random
+}
+
+},{}],15:[function(require,module,exports){
 (function (global){
 module.exports = exports = find
 
@@ -946,7 +999,7 @@ function query(selector, box) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 (function (global){
 var is = exports
 
@@ -1096,17 +1149,14 @@ is.empty = function(val) {
 }
 
 is.element = function(elem) {
-	if (is.obj(elem) && 1 === elem.nodeType) {
-		if (is.h5) {
-			return /element/.test(_class(elem))
-		}
+	if (elem && 1 === elem.nodeType) {
 		return true
 	}
 	return false
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var is = require('min-is')
@@ -1167,9 +1217,7 @@ function evalJSON(str) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-is":17,"min-util":21}],17:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"dup":15}],18:[function(require,module,exports){
+},{"min-is":16,"min-util":20}],18:[function(require,module,exports){
 exports.parse = function(qs, sep, eq) {
 	qs += ''
 	sep = sep || '&'
@@ -1271,269 +1319,6 @@ function exec(val) {
 }
 
 },{"min-util":20}],20:[function(require,module,exports){
-var is = require('min-is')
-
-var _ = exports
-
-_.is = is
-
-function extend(dst) {
-	var len = arguments.length
-	if (len > 1) {
-		for (var i = 1; i < len; i++) {
-			var hash = arguments[i]
-			if (hash) {
-				for (var key in hash) {
-					if (is.owns(hash, key)) {
-						var val = hash[key]
-						if (is.undef(val) || val === dst[key] || val == dst) continue
-						dst[key] = val
-					}
-				}
-			}
-		}
-	}
-	return dst
-}
-
-_.keys = function(hash) {
-	var ret = []
-	if (hash) {
-		for (var key in hash) {
-			if (is.owns(hash, key)) {
-				ret.push(key)
-			}
-		}
-	}
-	return ret
-}
-
-_.extend = extend
-
-function fix(arr) {
-	if (!is.arraylike(arr)) arr = []
-	return arr
-}
-
-function identity(val) {
-	return val
-}
-
-_.identity = identity
-
-var stopKey = 'stopOnFalse'
-
-function each(arr, fn, custom) {
-	if (!is.fn(fn)) fn = identity
-	var fixed = arr
-	if (!is.arraylike(arr)) fixed = []
-
-	var len = fixed.length
-	var opt = extend({}, custom)
-	
-	if (custom) {
-		var ints = ['from', 'end', 'step']
-		for (var i = 0; i < ints.length; i++) {
-			var val = +opt[ints[i]]
-			if (!is.int(val)) val = undefined
-			opt[ints[i]] = val
-		}
-	}
-
-	var from = opt.from || 0
-	var end = opt.end || len
-	var step = opt.step || 1
-
-	if (custom) {
-		if (from < 0) from = 0
-		if (end > len) end = len
-		if (from + step * Infinity <= end) return arr // cannot finish
-	}
-
-	if (opt.reverse) {
-		step = -step
-		var tmp = from
-		from = end
-		end = tmp
-	}
-
-	for (var i = from; i < end; i += step) {
-		var ret
-		if (opt.context) {
-			ret = fn.call(opt.context, arr[i], i, arr)
-		} else {
-			ret = fn(arr[i], i, arr)
-		}
-		// default is stop on false
-		if (false !== opt[stopKey] && false === ret) break
-	}
-	return arr
-}
-
-_.each = each
-
-_.map = function(arr, fn) {
-	var ret = []
-	each(arr, function(item, i, arr) {
-		ret[i] = fn(item, i, arr)
-	})
-	return ret
-}
-
-_.filter = function(arr, fn) {
-	var ret = []
-	each(arr, function(item, i, arr) {
-		var val = fn(item, i, arr)
-		if (val) ret.push(item)
-	})
-	return ret
-}
-
-_.some = function(arr, fn) {
-	var ret = false
-	each(arr, function(item, i, arr) {
-		if (fn(item, i, arr)) {
-			ret = true
-			return false
-		}
-	})
-	return ret
-}
-
-_.every = function(arr, fn) {
-	var ret = true
-	each(arr, function(item, i, arr) {
-		if (!fn(item, i, arr)) {
-			ret = false
-			return false
-		}
-	})
-	return ret
-}
-
-_.find = function(arr, fn) {
-	var ret
-	each(arr, function(item, i, arr) {
-		if (fn(item, i, arr)) {
-			ret = item
-			return false
-		}
-	})
-	return ret
-}
-
-function slice(arr, from, end) {
-	var ret = []
-	each(arr, function(item) {
-		ret.push(item)
-	}, {
-		  from: from
-		, end: end
-	})
-	return ret
-}
-
-_.slice = slice
-
-function indexOf(val, sub) {
-	if (is.str(val)) return val.indexOf(sub)
-	var ret = -1
-	each(val, function(item, i) {
-		if (item == sub) {
-			ret = i
-			return false
-		}
-	})
-	return ret
-}
-
-_.indexOf = indexOf
-
-function has(val, sub) {
-	return -1 != indexOf(val, sub)
-}
-
-_.has = has
-
-_.uniq = function(arr) {
-	var ret = []
-	each(arr, function(item) {
-		if (!has(ret, item)) ret.push(item)
-	})
-	return ret
-}
-
-function reduce(arr, fn, prev) {
-	each(arr, function(item, i) {
-		prev = fn(prev, item, i, arr)
-	})
-	return prev
-}
-
-_.reduce = reduce
-
-_.only = function(obj, keys) {
-	obj = obj || {}
-	if (is.str(keys)) keys = keys.split(/ +/)
-	return reduce(keys, function(ret, key) {
-		if (null != obj[key]) ret[key] = obj[key]
-		return ret
-	}, {})
-}
-
-var rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g
-
-_.trim = function(str) {
-	if (null == str) return ''
-	return ('' + str).replace(rtrim, '')
-}
-
-_.flatten = function(arrs) {
-	var ret = []
-	each(arrs, function(arr) {
-		if (is.arraylike(arr)) {
-			each(arr, function(item) {
-				ret.push(item)
-			})
-		} else ret.push(arr)
-	})
-	return ret
-}
-
-_.union = function() {
-	return _.uniq(flatten(arguments))
-}
-
-_.bind = function(fn, ctx) {
-	if (!is.fn(fn)) return fn
-	var args = slice(arguments, 2)
-	ctx = ctx || this
-	return function() {
-		return fn.apply(ctx, _.flatten([args, arguments]))
-	}
-}
-
-_.create = (function() {
-	function Object() {} // so it seems like Object.create
-	return function(proto, property) {
-		// not same as Object.create, Object.create(proto, propertyDescription)
-		if ('object' != typeof proto) {
-			// null is ok
-			proto = null
-		}
-		Object.prototype = proto
-		return _.extend(new Object, property)
-	}
-})()
-
-_.inherits = function(ctor, superCtor) {
-	ctor.super_ = superCtor
-	ctor.prototype = _.create(superCtor.prototype, {
-		constructor: ctor
-	})
-}
-
-},{"min-is":15}],21:[function(require,module,exports){
 var is = require('min-is')
 
 var _ = exports
@@ -1705,8 +1490,10 @@ _.difference = function(arr, other) {
 _.asyncMap = function(arr, fn, cb) {
 	var ret = []
 	var count = 0
-	var hasDone = false
+	var hasDone, hasStart
+
 	each(arr, function(arg, i) {
+		hasStart = true
 		fn(arg, function(err, val) {
 			if (hasDone) return
 			count++
@@ -1721,6 +1508,8 @@ _.asyncMap = function(arr, fn, cb) {
 			}
 		})
 	})
+
+	if (!hasStart) cb(null) // empty
 }
 
 function slice(arr, from, end) {
@@ -1789,12 +1578,30 @@ _.trim = function(str) {
 	return ('' + str).replace(rtrim, '')
 }
 
-_.capitalize = function(str) {
-	if (str || 0 == str) {
-		str += ''
-		return str.charAt(0).toUpperCase() + str.substr(1)
-	}
+_.tostr = tostr
+
+function tostr(str) {
+	if (str || 0 == str) return str + ''
 	return ''
+}
+
+_.capitalize = function(str) {
+	str = tostr(str)
+	return str.charAt(0).toUpperCase() + str.substr(1)
+}
+
+_.decapitalize = function(str) {
+	str = tostr(str)
+	return str.charAt(0).toLowerCase() + str.substr(1)
+}
+
+_.camelCase = function(str) {
+	str = tostr(str)
+	var arr = str.split(/[^\w]|_+/)
+	arr = _.map(arr, function(val) {
+		return _.capitalize(val)
+	})
+	return _.decapitalize(arr.join(''))
 }
 
 _.flatten = function(arrs) {
@@ -1847,24 +1654,5 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
-},{"min-is":15}],22:[function(require,module,exports){
-/**
- * Export `uid`
- */
-
-module.exports = uid;
-
-/**
- * Create a `uid`
- *
- * @param {String} len
- * @return {String} uid
- */
-
-function uid(len) {
-  len = len || 7;
-  return Math.random().toString(35).substr(2, len);
-}
-
-},{}]},{},[13])(13)
+},{"min-is":16}]},{},[12])(12)
 });

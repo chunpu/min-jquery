@@ -1,6 +1,6 @@
 var _ = require('min-util')
 var $ = require('../')
-var Data = require('./data')
+var Data = require('min-data')
 
 var is = _.is
 var data_user = new Data

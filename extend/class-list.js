@@ -1,22 +1,50 @@
 var _ = require('min-util')
 var $ = require('../')
 
-$.fn.extend({
-	addClass: function(str) {
-		str = _.trim(str)
-		return this.each(function() {
-			this.className += ' ' + str
-		})
+// https://developer.mozilla.org/en-US/docs/Web/API/Element/classList
+function ClassList(elem) {}
+
+var proto = ClassList.prototype
+
+_.extend(proto, {
+	add: function() {
+		var classes = classListGetter(this)
+		this.className = _.union(classes, arguments).join(' ')
 	},
-	removeClass: function(name) {
+	remove: function() {
+		var classes = classListGetter(this)
+		this.className = _.difference(classes, arguments).join(' ')
+	},
+	contains: function(name) {
+		return _.has(classListGetter(this), name)
+	},
+	toggle: function(name, force) {
+		var has = proto.contains.call(this, name)
+		var method = 'add'
+		if (true != force) {
+			if (has || false == force) {
+				method = 'remove'
+			}
+		}
+		proto[method].call(this, name)
+	}
+})
+
+function classListGetter(el) {
+	return _.trim(el.className).split(/\s+/)
+}
+
+_.each('add remove toggle'.split(' '), function(key) {
+	$.fn[key + 'Class'] = function() {
+		var args = arguments
 		return this.each(function() {
-			var arr = getClassList(this.className)
-			this.className = _.without(arr, name).join(' ')
+			proto[key].apply(this, args)
 		})
 	}
 })
 
-function getClassList(str) {
-	var arr = _.trim(str).split(/ +/)
-	return _.uniq(arr)
+$.fn.hasClass = function(name) {
+	return _.every(this, function(el) {
+		return proto.contains.call(el, name)
+	})
 }

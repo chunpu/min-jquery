@@ -12,6 +12,7 @@ function $(val, box) {
 	if (!(this instanceof $)) return new $(val, box)
 
 	this.length = 0
+
 	if (!val) return
 
 	if (is.string(val)) {
