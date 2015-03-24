@@ -98,7 +98,11 @@ $.extend({
                 }
             } else {
                 // get
-                return data_user.get(elem, key)
+				if (key) {
+	                return data_user.get(elem, key)
+				}
+				// get or set data, always return object
+				return data_user.getData(elem, true)
             }
         }
     }
