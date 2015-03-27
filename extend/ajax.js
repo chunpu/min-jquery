@@ -1,5 +1,6 @@
 var querystring = require('min-qs')
 var $ = require('../')
+var uid = require('muid')
 
 function getScript(url, opt, cb) {
     var head = $('head')[0]

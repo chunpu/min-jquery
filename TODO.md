@@ -1,4 +1,4 @@
-- addClass
+- rework events
 - clone
 - appendTo
 - fix width height auto px

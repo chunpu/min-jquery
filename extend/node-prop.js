@@ -1,6 +1,7 @@
 var _ = require('min-util')
 var $ = require('../')
 var Data = require('min-data')
+var uid = require('muid')
 
 var is = _.is
 var data_user = new Data
@@ -14,7 +15,8 @@ var getComputedStyle = global.getComputedStyle || function(el) {
 }
 
 $.extend({
-	  access: function(elems, fn, key, val, isChain) {
+	expando: data_priv.expando,
+	access: function(elems, fn, key, val, isChain) {
 		var i = 0
 		if (key && 'object' === typeof key) {
    			// set multi k, v
@@ -37,16 +39,16 @@ $.extend({
    			}
    		}
    		return elems
-   	}
-    , attr: function(elem, key, val) {
+   	},
+    attr: function(elem, key, val) {
         if (undefined === val) {
             return elem.getAttribute(key)
         } else if (null === val) {
             return elem.removeAttribute(key)
         }
         elem.setAttribute(key, '' + val)
-    }
-    , text: function(elem, key, val) {
+    },
+    text: function(elem, key, val) {
         if (undefined !== val) return elem.textContent = '' + val
         var nodeType = elem.nodeType
         if (3 == nodeType || 4 == nodeType) {
@@ -60,20 +62,20 @@ $.extend({
             ret += $.text(elem)
         }
         return ret
-    }
-    , html: function(elem, key, val) {
+    },
+    html: function(elem, key, val) {
         if (undefined === val) {
             return elem.innerHTML
         }
         elem.innerHTML = '' + val
-    }
-    , prop: function(elem, key, val) {
+    },
+    prop: function(elem, key, val) {
         if (undefined === val) {
             return elem[key]
         }
         elem[key] = val
-    }
-    , css: function(elem, key, val) {
+    },
+    css: function(elem, key, val) {
         var style = elem.style || {}
         if (undefined === val) {
             var ret = style[key]
@@ -85,8 +87,8 @@ $.extend({
         } else {
             style[key] = val
         }
-    }
-    , data: function(elem, key, val) {
+    },
+    data: function(elem, key, val) {
         if (undefined !== val) {
             // set val
             data_user.set(elem, key, val)
@@ -105,8 +107,8 @@ $.extend({
 				return data_user.getData(elem, true)
             }
         }
-    }
-    , _data: function(elem, key, val) {
+    },
+    _data: function(elem, key, val) {
         if (undefined !== val) {
             // set val
             data_priv.set(elem, key, val)
@@ -121,8 +123,8 @@ $.extend({
                 return data_priv.get(elem, key)
             }
         }
-    }
-    , removeData: function(elem, key) {
+    },
+    removeData: function(elem, key) {
         data_user.remove(elem, key)
     }
 })

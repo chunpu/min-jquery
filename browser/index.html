@@ -1,7 +1,13 @@
-<div id="mocha"><div>
+<div id="mocha">mocha<div>
+<a id="click" href="http://baidu.com">click</a>
 <script src="./browser.js"></script>
 <script>
-var a = $([1, 2, 3])
-alert(a.length)
+//alert(a.length)
+$('#click').on('click', function() {
+	alert('click')
+	return false
+})
+
+alert($('<div>')[0].tagName)
 </script>
 <link rel="stylesheet" href="https://rawgit.com/mochajs/mocha/master/mocha.css">

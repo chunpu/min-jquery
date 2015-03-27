@@ -1,6 +1,7 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.$ = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var querystring = require('min-qs')
 var $ = require('../')
+var uid = require('muid')
 
 function getScript(url, opt, cb) {
     var head = $('head')[0]
@@ -173,7 +174,7 @@ function bindQuery2url(url, query) {
     return url + querystring.stringify(query)
 }
 
-},{"../":12,"min-qs":18}],2:[function(require,module,exports){
+},{"../":12,"min-qs":17,"muid":20}],2:[function(require,module,exports){
 var _ = require('min-util')
 var $ = require('../')
 
@@ -225,7 +226,7 @@ $.fn.hasClass = function(name) {
 	})
 }
 
-},{"../":12,"min-util":20}],3:[function(require,module,exports){
+},{"../":12,"min-util":19}],3:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -263,7 +264,7 @@ $.fn.offset = function() {
 	}
 }
 
-},{"../":12,"min-util":20}],4:[function(require,module,exports){
+},{"../":12,"min-util":19}],4:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -292,7 +293,7 @@ _.each('show hide toggle'.split(' '), function(key) {
     }
 })
 
-},{"../":12,"min-util":20}],5:[function(require,module,exports){
+},{"../":12,"min-util":19}],5:[function(require,module,exports){
 var $ = require('../')
 
 var eventNS = 'events'
@@ -360,8 +361,15 @@ $.extend({
 				var ret = obj.handler.call(elem, ev)
 				if (false === ret) {
 					ev = ev.originalEvent || ev
-					ev.preventDefault()
-					ev.stopPropagation()
+					if (ev.preventDefault) {
+						ev.preventDefault()
+					} else {
+						ev.returnValue = false
+					}
+					if (ev.stopPropagation) {
+						ev.stopPropagation()
+					}
+					ev.cancelBubble = true
 				}
 			}
 		}
@@ -515,11 +523,12 @@ $.fn.extend({
     }
 })
 
-},{"../":12,"min-util":20}],8:[function(require,module,exports){
+},{"../":12,"min-util":19}],8:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var $ = require('../')
 var Data = require('min-data')
+var uid = require('muid')
 
 var is = _.is
 var data_user = new Data
@@ -533,7 +542,8 @@ var getComputedStyle = global.getComputedStyle || function(el) {
 }
 
 $.extend({
-	  access: function(elems, fn, key, val, isChain) {
+	expando: data_priv.expando,
+	access: function(elems, fn, key, val, isChain) {
 		var i = 0
 		if (key && 'object' === typeof key) {
    			// set multi k, v
@@ -556,16 +566,16 @@ $.extend({
    			}
    		}
    		return elems
-   	}
-    , attr: function(elem, key, val) {
+   	},
+    attr: function(elem, key, val) {
         if (undefined === val) {
             return elem.getAttribute(key)
         } else if (null === val) {
             return elem.removeAttribute(key)
         }
         elem.setAttribute(key, '' + val)
-    }
-    , text: function(elem, key, val) {
+    },
+    text: function(elem, key, val) {
         if (undefined !== val) return elem.textContent = '' + val
         var nodeType = elem.nodeType
         if (3 == nodeType || 4 == nodeType) {
@@ -579,20 +589,20 @@ $.extend({
             ret += $.text(elem)
         }
         return ret
-    }
-    , html: function(elem, key, val) {
+    },
+    html: function(elem, key, val) {
         if (undefined === val) {
             return elem.innerHTML
         }
         elem.innerHTML = '' + val
-    }
-    , prop: function(elem, key, val) {
+    },
+    prop: function(elem, key, val) {
         if (undefined === val) {
             return elem[key]
         }
         elem[key] = val
-    }
-    , css: function(elem, key, val) {
+    },
+    css: function(elem, key, val) {
         var style = elem.style || {}
         if (undefined === val) {
             var ret = style[key]
@@ -604,8 +614,8 @@ $.extend({
         } else {
             style[key] = val
         }
-    }
-    , data: function(elem, key, val) {
+    },
+    data: function(elem, key, val) {
         if (undefined !== val) {
             // set val
             data_user.set(elem, key, val)
@@ -617,11 +627,15 @@ $.extend({
                 }
             } else {
                 // get
-                return data_user.get(elem, key)
+				if (key) {
+	                return data_user.get(elem, key)
+				}
+				// get or set data, always return object
+				return data_user.getData(elem, true)
             }
         }
-    }
-    , _data: function(elem, key, val) {
+    },
+    _data: function(elem, key, val) {
         if (undefined !== val) {
             // set val
             data_priv.set(elem, key, val)
@@ -636,8 +650,8 @@ $.extend({
                 return data_priv.get(elem, key)
             }
         }
-    }
-    , removeData: function(elem, key) {
+    },
+    removeData: function(elem, key) {
         data_user.remove(elem, key)
     }
 })
@@ -670,7 +684,7 @@ $.fn.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":12,"min-data":13,"min-util":20}],9:[function(require,module,exports){
+},{"../":12,"min-data":13,"min-util":19,"muid":20}],9:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -736,7 +750,7 @@ $.fn.extend({
 	}
 })
 
-},{"../":12,"min-util":20}],10:[function(require,module,exports){
+},{"../":12,"min-util":19}],10:[function(require,module,exports){
 (function (global){
 var $ = require('..')
 var ready = require('min-ready')()
@@ -756,7 +770,7 @@ $.fn.extend({
 setTimeout(bindEvent) // wait all extend ready
 
 function bindEvent() {
-	if ('complete' == doc.readyState) {
+	if (doc && 'complete' == doc.readyState) {
 		return ready.ready($)
 	}
 	$(doc).on(docLoad, loaded)
@@ -770,7 +784,7 @@ function loaded() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"..":12,"min-ready":19}],11:[function(require,module,exports){
+},{"..":12,"min-ready":18}],11:[function(require,module,exports){
 (function (global){
 var $ = require('../')
 var _ = require('min-util')
@@ -825,16 +839,18 @@ $.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":12,"min-parse":17,"min-util":20}],12:[function(require,module,exports){
+},{"../":12,"min-parse":16,"min-util":19}],12:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var parse = require('min-parse')
 var find = require('min-find')
+var uid = require('muid')
 
-module.exports = exports = $
-
+uid.prefix = 'minJQ-'
 var doc = global.document
 var is = _.is
+
+module.exports = exports = $
 
 function $(val, box) {
 	if (is.fn(val)) return $(doc).ready(val)
@@ -852,7 +868,8 @@ function $(val, box) {
 		}
 	}
 
-	if (!is.arraylike(val)) val = [val]
+	// if (!is.arraylike(val)) val = [val] // IE10..11 is fucked..
+	if (!is.int(val.length)) val = [val]
 
 	var len = val.length
 	for (var i = 0; i < len; i++) {
@@ -876,7 +893,7 @@ proto.extend({jquery: true})
 require('./extend')
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./extend":6,"min-find":15,"min-parse":17,"min-util":20}],13:[function(require,module,exports){
+},{"./extend":6,"min-find":14,"min-parse":16,"min-util":19,"muid":20}],13:[function(require,module,exports){
 var uid = require('muid')
 
 module.exports = Data
@@ -930,22 +947,12 @@ proto.getData = function(owner, shouldCreate) {
 
 proto.discard = function(owner) {
 	if (owner && owner[this.expando]) {
-		delete owner[this.expando]
+		// old IE will crash on element `delete`
+		owner[this.expando] = undefined
 	}
 }
 
-},{"muid":14}],14:[function(require,module,exports){
-module.exports = muid
-
-muid.prefix = ''
-
-function muid(len) {
-	len = len || 7
-	var random = Math.random().toString(35).substr(2, len)
-	return muid.prefix + random
-}
-
-},{}],15:[function(require,module,exports){
+},{"muid":20}],14:[function(require,module,exports){
 (function (global){
 module.exports = exports = find
 
@@ -999,7 +1006,7 @@ function query(selector, box) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 (function (global){
 var is = exports
 
@@ -1155,8 +1162,12 @@ is.element = function(elem) {
 	return false
 }
 
+is.regexp = function(val) {
+	return 'regexp' == _class(val)
+}
+
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],17:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var is = require('min-is')
@@ -1217,7 +1228,7 @@ function evalJSON(str) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-is":16,"min-util":20}],18:[function(require,module,exports){
+},{"min-is":15,"min-util":19}],17:[function(require,module,exports){
 exports.parse = function(qs, sep, eq) {
 	qs += ''
 	sep = sep || '&'
@@ -1261,7 +1272,7 @@ exports.stringify = function(obj, sep, eq) {
 	return ret.join(sep)
 }
 
-},{}],19:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 var _ = require('min-util')
 var is = _.is
 
@@ -1318,7 +1329,7 @@ function exec(val) {
 	}
 }
 
-},{"min-util":20}],20:[function(require,module,exports){
+},{"min-util":19}],19:[function(require,module,exports){
 var is = require('min-is')
 
 var _ = exports
@@ -1374,12 +1385,11 @@ var stopKey = 'stopOnFalse'
 
 function each(arr, fn, custom) {
 	if (!is.fn(fn)) fn = identity
-	var fixed = arr
-	if (!is.arraylike(arr)) fixed = []
+	if (!is.arraylike(arr)) arr = []
 
-	var len = fixed.length
+	var len = arr.length
 	var opt = extend({}, custom)
-	
+
 	if (custom) {
 		var ints = ['from', 'end', 'step']
 		for (var i = 0; i < ints.length; i++) {
@@ -1397,13 +1407,6 @@ function each(arr, fn, custom) {
 		if (from < 0) from = 0
 		if (end > len) end = len
 		if (from + step * Infinity <= end) return arr // cannot finish
-	}
-
-	if (opt.reverse) {
-		step = -step
-		var tmp = from
-		from = end
-		end = tmp
 	}
 
 	for (var i = from; i < end; i += step) {
@@ -1654,5 +1657,16 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
-},{"min-is":16}]},{},[12])(12)
+},{"min-is":15}],20:[function(require,module,exports){
+module.exports = exports = muid
+
+exports.prefix = ''
+
+function muid(len) {
+	len = len || 7
+	var random = Math.random().toString(35).substr(2, len)
+	return exports.prefix + random
+}
+
+},{}]},{},[12])(12)
 });

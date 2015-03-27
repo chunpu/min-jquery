@@ -65,8 +65,15 @@ $.extend({
 				var ret = obj.handler.call(elem, ev)
 				if (false === ret) {
 					ev = ev.originalEvent || ev
-					ev.preventDefault()
-					ev.stopPropagation()
+					if (ev.preventDefault) {
+						ev.preventDefault()
+					} else {
+						ev.returnValue = false
+					}
+					if (ev.stopPropagation) {
+						ev.stopPropagation()
+					}
+					ev.cancelBubble = true
 				}
 			}
 		}

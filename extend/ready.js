@@ -16,7 +16,7 @@ $.fn.extend({
 setTimeout(bindEvent) // wait all extend ready
 
 function bindEvent() {
-	if ('complete' == doc.readyState) {
+	if (doc && 'complete' == doc.readyState) {
 		return ready.ready($)
 	}
 	$(doc).on(docLoad, loaded)

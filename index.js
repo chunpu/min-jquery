@@ -1,11 +1,13 @@
 var _ = require('min-util')
 var parse = require('min-parse')
 var find = require('min-find')
+var uid = require('muid')
 
-module.exports = exports = $
-
+uid.prefix = 'minJQ-'
 var doc = global.document
 var is = _.is
+
+module.exports = exports = $
 
 function $(val, box) {
 	if (is.fn(val)) return $(doc).ready(val)
@@ -23,7 +25,8 @@ function $(val, box) {
 		}
 	}
 
-	if (!is.arraylike(val)) val = [val]
+	// if (!is.arraylike(val)) val = [val] // IE10..11 is fucked..
+	if (!is.int(val.length)) val = [val]
 
 	var len = val.length
 	for (var i = 0; i < len; i++) {
