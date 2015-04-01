@@ -28,7 +28,7 @@ $.fn.extend({
 	}
 	, map: function(fn) {
 		var arr = _.map(this, function(val, i) {
-			arr[i] = fn.call(val, i, val, this)
+			return fn.call(val, i, val, this)
 		})
 		return this.pushStack(arr)
 	}

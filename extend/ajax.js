@@ -2,6 +2,26 @@ var querystring = require('min-qs')
 var $ = require('../')
 var uid = require('muid')
 
+var cors = 'withCredentials'
+
+var support = {}
+
+$.support = support
+
+var ajaxSetting = {
+    xhr: function() {
+        try {
+            if (window.XMLHttpRequest) {
+                return new XMLHttpRequest()
+            }
+            return new ActiveXObject('Microsoft.XMLHTTP')
+        } catch (e) {}
+    },
+    jsonp: 'callback'
+}
+
+$.ajaxSetting = ajaxSetting
+
 function getScript(url, opt, cb) {
     var head = $('head')[0]
     var script = document.createElement('script')
@@ -161,6 +181,61 @@ $.each(['get', 'post'], function(i, method) {
         })
     }
 })
+
+function getXhr(url, opt, cb) {
+
+    var xhr = ajaxSetting.xhr()
+
+    function send() {
+        if (!xhr) return
+        var type = opt.type || 'GET'
+
+        url = bindQuery2url(url, opt.data)
+
+        xhr.open(type, url, !cb.async)
+
+        if (cors in xhr) {
+            support.cors = true
+            xhr[cors] = true // should after open
+        }
+
+        var headers = opt.headers
+        if (headers) {
+            for (var key in headers) {
+                xhr.setRequestHeader(key, headers[key])
+            }
+        }
+
+        xhr.send(opt.data || null)
+
+        var handler = function() {
+            if (handler &&  4 === xhr.readyState) {
+                handler = undefined
+                cb && cb(null, xhr, xhr.responseText)
+            }
+        }
+
+        if (false === opt.async) {
+            handler()
+        } else if (4 === xhr.readyState) {
+            setTimeout(handler)
+        } else {
+            xhr.onreadystatechange = handler
+        }
+    }
+
+    function abort() {
+        if (!xhr) return
+        cb = null
+        xhr.abort()
+    }
+
+    return {
+        send: send,
+        abort: abort
+    }
+
+}
 
 function bindQuery2url(url, query) {
     if (-1 == url.indexOf('?')) {
