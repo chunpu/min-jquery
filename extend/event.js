@@ -2,6 +2,9 @@ var $ = require('../')
 
 var eventNS = 'events'
 
+// TODO fix ie event to w3c
+// http://www.brainjar.com/dhtml/events/default3.asp
+
 $.Event = function(src, props) {
 	if (!(this instanceof $.Event)) {
 		return new $.Event(src, props)
@@ -31,6 +34,12 @@ $.extend({
 			events = {}
 			$._data(elem, eventNS, events)
 		}
+
+		function miniHandler(ev) {
+			// we have to save element for old ie
+			$.trigger(elem, $.Event(ev))
+		}
+
 		if (!events[type]) {
 			events[type] = []
 			if (elem.addEventListener) {
@@ -137,11 +146,3 @@ $.fn.extend({
 		return this.eventHandler(events, handler, $.trigger)
 	}
 })
-
-function miniHandler(ev) {
-	ev = $.Event(ev)
-	var elem = this
-	if (!elem.nodeType)
-		elem = ev.target
-	$.trigger(elem, ev)
-}

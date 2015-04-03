@@ -1,11 +1,21 @@
 <div id="mocha">mocha<div>
 <a id="click" href="http://baidu.com">click</a>
+<div id="box" style='border: 1px solid #000; height: 100px; width: 200px;'>
+	<a style='background: #ccc;'> click in box </a>
+</div>
 <script src="./browser.js"></script>
 <script>
 //alert(a.length)
 $('#click').on('click', function() {
 	alert('click')
 	return false
+})
+
+var $box = $('#box')
+$box.on('click', function() {
+	var box = $box[0]
+	console.log(this, box)
+	alert(box == this)
 })
 
 //alert($('<div>')[0].tagName)

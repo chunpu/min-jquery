@@ -3,6 +3,26 @@ var querystring = require('min-qs')
 var $ = require('../')
 var uid = require('muid')
 
+var cors = 'withCredentials'
+
+var support = {}
+
+$.support = support
+
+var ajaxSetting = {
+    xhr: function() {
+        try {
+            if (window.XMLHttpRequest) {
+                return new XMLHttpRequest()
+            }
+            return new ActiveXObject('Microsoft.XMLHTTP')
+        } catch (e) {}
+    },
+    jsonp: 'callback'
+}
+
+$.ajaxSetting = ajaxSetting
+
 function getScript(url, opt, cb) {
     var head = $('head')[0]
     var script = document.createElement('script')
@@ -163,6 +183,61 @@ $.each(['get', 'post'], function(i, method) {
     }
 })
 
+function getXhr(url, opt, cb) {
+
+    var xhr = ajaxSetting.xhr()
+
+    function send() {
+        if (!xhr) return
+        var type = opt.type || 'GET'
+
+        url = bindQuery2url(url, opt.data)
+
+        xhr.open(type, url, !cb.async)
+
+        if (cors in xhr) {
+            support.cors = true
+            xhr[cors] = true // should after open
+        }
+
+        var headers = opt.headers
+        if (headers) {
+            for (var key in headers) {
+                xhr.setRequestHeader(key, headers[key])
+            }
+        }
+
+        xhr.send(opt.data || null)
+
+        var handler = function() {
+            if (handler &&  4 === xhr.readyState) {
+                handler = undefined
+                cb && cb(null, xhr, xhr.responseText)
+            }
+        }
+
+        if (false === opt.async) {
+            handler()
+        } else if (4 === xhr.readyState) {
+            setTimeout(handler)
+        } else {
+            xhr.onreadystatechange = handler
+        }
+    }
+
+    function abort() {
+        if (!xhr) return
+        cb = null
+        xhr.abort()
+    }
+
+    return {
+        send: send,
+        abort: abort
+    }
+
+}
+
 function bindQuery2url(url, query) {
     if (-1 == url.indexOf('?')) {
         url += '?'
@@ -298,6 +373,9 @@ var $ = require('../')
 
 var eventNS = 'events'
 
+// TODO fix ie event to w3c
+// http://www.brainjar.com/dhtml/events/default3.asp
+
 $.Event = function(src, props) {
 	if (!(this instanceof $.Event)) {
 		return new $.Event(src, props)
@@ -327,6 +405,12 @@ $.extend({
 			events = {}
 			$._data(elem, eventNS, events)
 		}
+
+		function miniHandler(ev) {
+			// we have to save element for old ie
+			$.trigger(elem, $.Event(ev))
+		}
+
 		if (!events[type]) {
 			events[type] = []
 			if (elem.addEventListener) {
@@ -433,14 +517,6 @@ $.fn.extend({
 		return this.eventHandler(events, handler, $.trigger)
 	}
 })
-
-function miniHandler(ev) {
-	ev = $.Event(ev)
-	var elem = this
-	if (!elem.nodeType)
-		elem = ev.target
-	$.trigger(elem, ev)
-}
 
 },{"../":12}],6:[function(require,module,exports){
 require('./util')
@@ -715,7 +791,7 @@ $.fn.extend({
 	}
 	, map: function(fn) {
 		var arr = _.map(this, function(val, i) {
-			arr[i] = fn.call(val, i, val, this)
+			return fn.call(val, i, val, this)
 		})
 		return this.pushStack(arr)
 	}
@@ -1177,8 +1253,9 @@ exports.html = function(str, box) {
 	if (is.str(str)) {
 		box = box || document
 		var div = box.createElement('div')
-		div.innerHTML = str + ''
-		return div.childNodes
+		// add noscope element for old IE like parse('<style>')
+		div.innerHTML = 'x<div>' + str + '</div>'
+		return div.lastChild.childNodes
 	}
 	return []
 }
