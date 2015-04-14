@@ -35,18 +35,19 @@ $.extend({
 			$._data(elem, eventNS, events)
 		}
 
-		function miniHandler(ev) {
-			// we have to save element for old ie
-			$.trigger(elem, $.Event(ev))
+		var eventHandler = $._data(elem, 'handler')
+		if (!eventHandler) {
+			// one element one handler
+			eventHandler = function(ev) {
+				// we have to save element for old ie
+				$.trigger(elem, $.Event(ev))
+			}
+			$._data(elem, 'handler', eventHandler)
 		}
 
 		if (!events[type]) {
 			events[type] = []
-			if (elem.addEventListener) {
-				elem.addEventListener(type, miniHandler, false)
-			} else if (elem.attachEvent) {
-				elem.attachEvent('on' + type, miniHandler)
-			}
+			bind(elem, type, eventHandler)
 		}
 		var typeEvents = events[type]
 		var ev = {
@@ -118,6 +119,9 @@ $.extend({
 					typeEvents.splice(i, 1)
 				}
 			}
+			if (!events[type].length) {
+				unbind(elem, type, $._data(elem, 'handler'))
+			}
 		}
 	}
 })
@@ -146,3 +150,20 @@ $.fn.extend({
 		return this.eventHandler(events, handler, $.trigger)
 	}
 })
+
+
+function bind(el, type, fn) {
+	if (el.addEventListener) {
+		el.addEventListener(type, fn, false)
+	} else if (el.attachEvent) {
+		el.attachEvent('on' + type, fn)
+	}
+}
+
+function unbind(el, type, fn) {
+	if (el.removeEventListener) {
+		el.removeEventListener(type, fn, false)
+	} else if (el.detachEvent) {
+		el.detachEvent('on' + type, fn)
+	}
+}

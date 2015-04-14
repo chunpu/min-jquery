@@ -1,6 +1,6 @@
 {
   "name": "min-jquery",
-  "version": "1.2.17",
+  "version": "1.2.18",
   "description": "really fucking simple small jquery",
   "main": "index.js",
   "scripts": {

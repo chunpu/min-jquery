@@ -59,7 +59,7 @@ function bind(el, type) {
 
 function unbind(el, type) {
 	if (el.removeEventListener) {
-		el.addEventListener(type, handler, false)
+		el.removeEventListener(type, handler, false)
 	} else if (el.detachEvent) {
 		el.detachEvent('on' + type, handler)
 	}
