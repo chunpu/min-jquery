@@ -1,36 +1,81 @@
 var $ = require('../')
-var _ = require('min-is')
-var Emitter = require('min-event')
-
-var emitter = new Emitter
-var uid = require('muid')()
+var _ = require('min-util')
 
 $.Event = Event
 
-$.event = {
+var _event = $.event = {
 	add: function(el, type, handler, data, selector, isOnce) {
 		var arr = type.split('.')
 		type = arr.shift()
-		var action = isOnce ? 'once' : 'on'
-		var event = emitter[action](handler)
-		_.extend(event, {
-			type: type,
-			data: data,
-			namespace: arr,
-			selector: selector
-		})
-		var binded = getBinded(el)
-		if (!binded[type]) {
-			binded[type] = true
-			bind(el, type)
+
+		var item = {
+			  handler: handler
+			, type: type
+			, data: data
+			, namespace: arr
+			, selector: selector
 		}
+
+		var priv = getPriv4Event(el)
+		var events = priv.events[type]
+		if (!events) {
+			// init events
+			events = priv.events[type] = []
+			bind(el, type, priv.handler)
+		}
+
+		events.push(item)
 	},
-	trigger: function() {
+	trigger: function(el, ev) {
+		// fix ev
+		var priv = getPriv4Event(el)
+		var filtered = _.filter(priv.events[ev.type], function(item) {
+			return _.has(item.namespace, ev.namespace)
+		})
+		_.each(filtered, function(item) {
+			var ret = item.handler.call(el, ev)
+			if (false === ret) {
+				var origin = ev.originalEvent
+				if (origin.preventDefault) {
+					origin.preventDefault()
+				} else {
+					origin.returnValue = false
+				}
+				if (origin.stopPropagation) {
+					origin.stopPropagation()
+				}
+				origin.cancelBubble = true
+			}
+		})
+	},
+	off: function(el, ev, handler) {
+		var priv = getPriv4Event(el)
+		var events = priv.events
+		if (!ev || '.' == ev.charAt(0)) {
+			for (var key in events) {
+				_event.off(el, key + ev, handler)
+			}
+			return
+		}
+		var arr = ev.split('.')
 	}
 }
 
-function filterEvents(event) {
+function filterEvents(ev) {
 	
+}
+
+function getPriv4Event(el) {
+	var priv = $._data(el)
+	if (!priv.handler) {
+		priv.handler = function(ev) {
+			$.trigger(el, $.Event(ev))
+		}
+	}
+	if (!priv.events) {
+		priv.events = {}
+	}
+	return priv
 }
 
 function Event(src) {
@@ -39,28 +84,24 @@ function Event(src) {
 	this.target = src.target || src.srcElement
 }
 
-function handler() {
-	
-}
-
 function getBinded(el) {
 	var ret = $._data(el)
 	if (!ret.events) ret.events = {}
 	return ret
 }
 
-function bind(el, type) {
+function bind(el, type, fn) {
 	if (el.addEventListener) {
-		el.addEventListener(type, handler, false)
+		el.addEventListener(type, fn, false)
 	} else if (el.attachEvent) {
-		el.attachEvent('on' + type, handler)
+		el.attachEvent('on' + type, fn)
 	}
 }
 
-function unbind(el, type) {
+function unbind(el, type, fn) {
 	if (el.removeEventListener) {
-		el.removeEventListener(type, handler, false)
+		el.removeEventListener(type, fn, false)
 	} else if (el.detachEvent) {
-		el.detachEvent('on' + type, handler)
+		el.detachEvent('on' + type, fn)
 	}
 }

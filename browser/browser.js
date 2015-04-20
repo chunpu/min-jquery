@@ -492,6 +492,7 @@ $.extend({
 			}
 			if (!events[type].length) {
 				unbind(elem, type, $._data(elem, 'handler'))
+				events[type] = null // remove the array
 			}
 		}
 	}
