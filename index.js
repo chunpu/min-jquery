@@ -26,7 +26,7 @@ function $(val, box) {
 	}
 
 	// if (!is.arraylike(val)) val = [val] // IE10..11 is fucked..
-	if (!is.int(val.length)) val = [val]
+	if (!is.int(val.length) || is.window(val)) val = [val]
 
 	var len = val.length
 	for (var i = 0; i < len; i++) {

@@ -967,7 +967,7 @@ function $(val, box) {
 	}
 
 	// if (!is.arraylike(val)) val = [val] // IE10..11 is fucked..
-	if (!is.int(val.length)) val = [val]
+	if (!is.int(val.length) || is.window(val)) val = [val]
 
 	var len = val.length
 	for (var i = 0; i < len; i++) {
@@ -1228,13 +1228,21 @@ is.array = function(arr) {
 }
 
 is.arraylike = function(arr) {
-	if (is.obj(arr)) {
+	// window has length for iframe too, but it is not arraylike
+	if (!is.window(arr) && is.obj(arr)) {
 		if (owns(arr, 'length')) {
 			var len = arr.length
 			if (is.int(len) && len >= 0) {
 				return true
 			}
 		}
+	}
+	return false
+}
+
+is.window = function(val) {
+	if (val && val.window == val) {
+		return true
 	}
 	return false
 }
@@ -1437,7 +1445,7 @@ _.is = is
 
 function extend(dst) {
 	var len = arguments.length
-	if (len > 1) {
+	if (dst && len > 1) {
 		for (var i = 1; i < len; i++) {
 			var hash = arguments[i]
 			if (hash) {
