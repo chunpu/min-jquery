@@ -249,7 +249,7 @@ function bindQuery2url(url, query) {
     return url + querystring.stringify(query)
 }
 
-},{"../":12,"min-qs":17,"muid":20}],2:[function(require,module,exports){
+},{"../":12,"min-qs":17,"muid":21}],2:[function(require,module,exports){
 var _ = require('min-util')
 var $ = require('../')
 
@@ -782,7 +782,7 @@ $.fn.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":12,"min-data":13,"min-util":19,"muid":20}],9:[function(require,module,exports){
+},{"../":12,"min-data":13,"min-util":19,"muid":21}],9:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -937,7 +937,7 @@ $.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":12,"min-parse":16,"min-util":19}],12:[function(require,module,exports){
+},{"../":12,"min-parse":15,"min-util":19}],12:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var parse = require('min-parse')
@@ -966,8 +966,7 @@ function $(val, box) {
 		}
 	}
 
-	// if (!is.arraylike(val)) val = [val] // IE10..11 is fucked..
-	if (!is.int(val.length) || is.window(val)) val = [val]
+	if (!is.arraylike(val)) val = [val]
 
 	var len = val.length
 	for (var i = 0; i < len; i++) {
@@ -991,7 +990,7 @@ proto.extend({jquery: true})
 require('./extend')
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./extend":6,"min-find":14,"min-parse":16,"min-util":19,"muid":20}],13:[function(require,module,exports){
+},{"./extend":6,"min-find":14,"min-parse":15,"min-util":19,"muid":21}],13:[function(require,module,exports){
 var uid = require('muid')
 
 module.exports = Data
@@ -1050,7 +1049,7 @@ proto.discard = function(owner) {
 	}
 }
 
-},{"muid":20}],14:[function(require,module,exports){
+},{"muid":21}],14:[function(require,module,exports){
 (function (global){
 module.exports = exports = find
 
@@ -1105,6 +1104,68 @@ function query(selector, box) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],15:[function(require,module,exports){
+(function (global){
+var _ = require('min-util')
+var is = require('min-is')
+
+exports.html = function(str, box) {
+	// unsafe html, e.g. `<script>`
+	if (is.str(str)) {
+		box = box || document
+		var div = box.createElement('div')
+		// add noscope element for old IE like parse('<style>')
+		div.innerHTML = 'x<div>' + str + '</div>'
+		return div.lastChild.childNodes
+	}
+	return []
+}
+
+exports.xml = function(str) {
+	str = str + ''
+	var xml
+	try {
+		if (global.DOMParser) {
+			var parser = new DOMParser()
+			xml = parser.parseFromString(str, 'text/xml')
+		} else {
+			xml = new ActiveXObject('Microsoft.XMLDOM')
+			xml.async = 'false'
+			xml.loadXML(str)
+		}
+	} catch (e) {
+		xml = undefined
+	}
+	if (xml && xml.documentElement) {
+		if (!xml.getElementsByTagName('parsererror').length) {
+			return xml
+		}
+	}
+	throw new Error('Invalid XML: ' + str)
+}
+
+var JSON = global.JSON || {}
+
+exports.json = JSON.parse || evalJSON
+
+var validJson = /(,)|(\[|{)|(}|])|"(?:[^"\\\r\n]|\\["\\\/bfnrt]|\\u[\da-fA-F]{4})*"\s*:?|true|false|null|-?(?!0\d)\d+(?:\.\d+|)(?:[eE][+-]?\d+|)/g
+
+function evalJSON(str) {
+	str = _.trim(str + '')
+	var depth, requireNonComma
+	var invalid = str.replace(validJson, function(token, comma, open, close) {
+		if (requireNonComma && comma) depth = 0
+		if (depth = 0) return token
+		requireNonComma = open || comma
+		depth += !close - !open
+		return ''
+	})
+	invalid = _.trim(invalid)
+	if (invalid) throw new Error('Invalid JSON: ' + str)
+	return Function('return ' + str)()
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"min-is":16,"min-util":19}],16:[function(require,module,exports){
 (function (global){
 var is = exports
 
@@ -1230,11 +1291,9 @@ is.array = function(arr) {
 is.arraylike = function(arr) {
 	// window has length for iframe too, but it is not arraylike
 	if (!is.window(arr) && is.obj(arr)) {
-		if (owns(arr, 'length')) {
-			var len = arr.length
-			if (is.int(len) && len >= 0) {
-				return true
-			}
+		var len = arr.length
+		if (is.int(len) && len >= 0) {
+			return true
 		}
 	}
 	return false
@@ -1273,69 +1332,7 @@ is.regexp = function(val) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],16:[function(require,module,exports){
-(function (global){
-var _ = require('min-util')
-var is = require('min-is')
-
-exports.html = function(str, box) {
-	// unsafe html, e.g. `<script>`
-	if (is.str(str)) {
-		box = box || document
-		var div = box.createElement('div')
-		// add noscope element for old IE like parse('<style>')
-		div.innerHTML = 'x<div>' + str + '</div>'
-		return div.lastChild.childNodes
-	}
-	return []
-}
-
-exports.xml = function(str) {
-	str = str + ''
-	var xml
-	try {
-		if (global.DOMParser) {
-			var parser = new DOMParser()
-			xml = parser.parseFromString(str, 'text/xml')
-		} else {
-			xml = new ActiveXObject('Microsoft.XMLDOM')
-			xml.async = 'false'
-			xml.loadXML(str)
-		}
-	} catch (e) {
-		xml = undefined
-	}
-	if (xml && xml.documentElement) {
-		if (!xml.getElementsByTagName('parsererror').length) {
-			return xml
-		}
-	}
-	throw new Error('Invalid XML: ' + str)
-}
-
-var JSON = global.JSON || {}
-
-exports.json = JSON.parse || evalJSON
-
-var validJson = /(,)|(\[|{)|(}|])|"(?:[^"\\\r\n]|\\["\\\/bfnrt]|\\u[\da-fA-F]{4})*"\s*:?|true|false|null|-?(?!0\d)\d+(?:\.\d+|)(?:[eE][+-]?\d+|)/g
-
-function evalJSON(str) {
-	str = _.trim(str + '')
-	var depth, requireNonComma
-	var invalid = str.replace(validJson, function(token, comma, open, close) {
-		if (requireNonComma && comma) depth = 0
-		if (depth = 0) return token
-		requireNonComma = open || comma
-		depth += !close - !open
-		return ''
-	})
-	invalid = _.trim(invalid)
-	if (invalid) throw new Error('Invalid JSON: ' + str)
-	return Function('return ' + str)()
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-is":15,"min-util":19}],17:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 exports.parse = function(qs, sep, eq) {
 	qs += ''
 	sep = sep || '&'
@@ -1764,7 +1761,9 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
-},{"min-is":15}],20:[function(require,module,exports){
+},{"min-is":20}],20:[function(require,module,exports){
+arguments[4][16][0].apply(exports,arguments)
+},{"dup":16}],21:[function(require,module,exports){
 module.exports = exports = muid
 
 exports.prefix = ''
