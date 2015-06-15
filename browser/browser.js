@@ -249,7 +249,7 @@ function bindQuery2url(url, query) {
     return url + querystring.stringify(query)
 }
 
-},{"../":12,"min-qs":17,"muid":21}],2:[function(require,module,exports){
+},{"../":12,"min-qs":17,"muid":26}],2:[function(require,module,exports){
 var _ = require('min-util')
 var $ = require('../')
 
@@ -301,7 +301,7 @@ $.fn.hasClass = function(name) {
 	})
 }
 
-},{"../":12,"min-util":19}],3:[function(require,module,exports){
+},{"../":12,"min-util":22}],3:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -333,13 +333,19 @@ _.each('width height'.split(' '), function(type) {
 $.fn.offset = function() {
 	var el = this[0]
 	if (!el) return
+	/*
 	return {
 		left: el.offsetLeft,
 		top: el.offsetTop
 	}
+	*/
+	
+	var offset = el.getBoundingClientRect()
+	return _.only(offset, 'left top')
+	
 }
 
-},{"../":12,"min-util":19}],4:[function(require,module,exports){
+},{"../":12,"min-util":22}],4:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -368,7 +374,7 @@ _.each('show hide toggle'.split(' '), function(key) {
     }
 })
 
-},{"../":12,"min-util":19}],5:[function(require,module,exports){
+},{"../":12,"min-util":22}],5:[function(require,module,exports){
 var $ = require('../')
 
 var eventNS = 'events'
@@ -621,7 +627,7 @@ $.fn.extend({
     }
 })
 
-},{"../":12,"min-util":19}],8:[function(require,module,exports){
+},{"../":12,"min-util":22}],8:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var $ = require('../')
@@ -782,7 +788,7 @@ $.fn.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":12,"min-data":13,"min-util":19,"muid":21}],9:[function(require,module,exports){
+},{"../":12,"min-data":13,"min-util":22,"muid":26}],9:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -848,7 +854,7 @@ $.fn.extend({
 	}
 })
 
-},{"../":12,"min-util":19}],10:[function(require,module,exports){
+},{"../":12,"min-util":22}],10:[function(require,module,exports){
 (function (global){
 var $ = require('..')
 var ready = require('min-ready')()
@@ -937,7 +943,7 @@ $.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":12,"min-parse":15,"min-util":19}],12:[function(require,module,exports){
+},{"../":12,"min-parse":16,"min-util":22}],12:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var parse = require('min-parse')
@@ -990,7 +996,7 @@ proto.extend({jquery: true})
 require('./extend')
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./extend":6,"min-find":14,"min-parse":15,"min-util":19,"muid":21}],13:[function(require,module,exports){
+},{"./extend":6,"min-find":14,"min-parse":16,"min-util":22,"muid":26}],13:[function(require,module,exports){
 var uid = require('muid')
 
 module.exports = Data
@@ -1049,7 +1055,7 @@ proto.discard = function(owner) {
 	}
 }
 
-},{"muid":21}],14:[function(require,module,exports){
+},{"muid":26}],14:[function(require,module,exports){
 (function (global){
 module.exports = exports = find
 
@@ -1104,68 +1110,6 @@ function query(selector, box) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],15:[function(require,module,exports){
-(function (global){
-var _ = require('min-util')
-var is = require('min-is')
-
-exports.html = function(str, box) {
-	// unsafe html, e.g. `<script>`
-	if (is.str(str)) {
-		box = box || document
-		var div = box.createElement('div')
-		// add noscope element for old IE like parse('<style>')
-		div.innerHTML = 'x<div>' + str + '</div>'
-		return div.lastChild.childNodes
-	}
-	return []
-}
-
-exports.xml = function(str) {
-	str = str + ''
-	var xml
-	try {
-		if (global.DOMParser) {
-			var parser = new DOMParser()
-			xml = parser.parseFromString(str, 'text/xml')
-		} else {
-			xml = new ActiveXObject('Microsoft.XMLDOM')
-			xml.async = 'false'
-			xml.loadXML(str)
-		}
-	} catch (e) {
-		xml = undefined
-	}
-	if (xml && xml.documentElement) {
-		if (!xml.getElementsByTagName('parsererror').length) {
-			return xml
-		}
-	}
-	throw new Error('Invalid XML: ' + str)
-}
-
-var JSON = global.JSON || {}
-
-exports.json = JSON.parse || evalJSON
-
-var validJson = /(,)|(\[|{)|(}|])|"(?:[^"\\\r\n]|\\["\\\/bfnrt]|\\u[\da-fA-F]{4})*"\s*:?|true|false|null|-?(?!0\d)\d+(?:\.\d+|)(?:[eE][+-]?\d+|)/g
-
-function evalJSON(str) {
-	str = _.trim(str + '')
-	var depth, requireNonComma
-	var invalid = str.replace(validJson, function(token, comma, open, close) {
-		if (requireNonComma && comma) depth = 0
-		if (depth = 0) return token
-		requireNonComma = open || comma
-		depth += !close - !open
-		return ''
-	})
-	invalid = _.trim(invalid)
-	if (invalid) throw new Error('Invalid JSON: ' + str)
-	return Function('return ' + str)()
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-is":16,"min-util":19}],16:[function(require,module,exports){
 (function (global){
 var is = exports
 
@@ -1332,7 +1276,69 @@ is.regexp = function(val) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],17:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
+(function (global){
+var _ = require('min-util')
+var is = require('min-is')
+
+exports.html = function(str, box) {
+	// unsafe html, e.g. `<script>`
+	if (is.str(str)) {
+		box = box || document
+		var div = box.createElement('div')
+		// add noscope element for old IE like parse('<style>')
+		div.innerHTML = 'x<div>' + str + '</div>'
+		return div.lastChild.childNodes
+	}
+	return []
+}
+
+exports.xml = function(str) {
+	str = str + ''
+	var xml
+	try {
+		if (global.DOMParser) {
+			var parser = new DOMParser()
+			xml = parser.parseFromString(str, 'text/xml')
+		} else {
+			xml = new ActiveXObject('Microsoft.XMLDOM')
+			xml.async = 'false'
+			xml.loadXML(str)
+		}
+	} catch (e) {
+		xml = undefined
+	}
+	if (xml && xml.documentElement) {
+		if (!xml.getElementsByTagName('parsererror').length) {
+			return xml
+		}
+	}
+	throw new Error('Invalid XML: ' + str)
+}
+
+var JSON = global.JSON || {}
+
+exports.json = JSON.parse || evalJSON
+
+var validJson = /(,)|(\[|{)|(}|])|"(?:[^"\\\r\n]|\\["\\\/bfnrt]|\\u[\da-fA-F]{4})*"\s*:?|true|false|null|-?(?!0\d)\d+(?:\.\d+|)(?:[eE][+-]?\d+|)/g
+
+function evalJSON(str) {
+	str = _.trim(str + '')
+	var depth, requireNonComma
+	var invalid = str.replace(validJson, function(token, comma, open, close) {
+		if (requireNonComma && comma) depth = 0
+		if (depth = 0) return token
+		requireNonComma = open || comma
+		depth += !close - !open
+		return ''
+	})
+	invalid = _.trim(invalid)
+	if (invalid) throw new Error('Invalid JSON: ' + str)
+	return Function('return ' + str)()
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"min-is":15,"min-util":22}],17:[function(require,module,exports){
 exports.parse = function(qs, sep, eq) {
 	qs += ''
 	sep = sep || '&'
@@ -1433,99 +1439,16 @@ function exec(val) {
 	}
 }
 
-},{"min-util":19}],19:[function(require,module,exports){
+},{"min-util":22}],19:[function(require,module,exports){
 var is = require('min-is')
+
+var slice = [].slice
 
 var _ = exports
 
 _.is = is
 
-function extend(dst) {
-	var len = arguments.length
-	if (dst && len > 1) {
-		for (var i = 1; i < len; i++) {
-			var hash = arguments[i]
-			if (hash) {
-				for (var key in hash) {
-					if (is.owns(hash, key)) {
-						var val = hash[key]
-						if (is.undef(val) || val === dst[key] || val === dst) continue
-						dst[key] = val
-					}
-				}
-			}
-		}
-	}
-	return dst
-}
-
-_.noop = function() {}
-
-_.now = function() {
-	return +new Date
-}
-
-_.keys = function(hash) {
-	var ret = []
-	if (hash) {
-		for (var key in hash) {
-			if (is.owns(hash, key)) {
-				ret.push(key)
-			}
-		}
-	}
-	return ret
-}
-
 _.extend = extend
-
-function identity(val) {
-	return val
-}
-
-_.identity = identity
-
-var stopKey = 'stopOnFalse'
-
-function each(arr, fn, custom) {
-	if (!is.fn(fn)) fn = identity
-	if (!is.arraylike(arr)) arr = []
-
-	var len = arr.length
-	var opt = extend({}, custom)
-
-	if (custom) {
-		var ints = ['from', 'end', 'step']
-		for (var i = 0; i < ints.length; i++) {
-			var val = +opt[ints[i]]
-			if (!is.int(val)) val = undefined
-			opt[ints[i]] = val
-		}
-	}
-
-	var from = opt.from || 0
-	var end = opt.end || len
-	var step = opt.step || 1
-
-	if (custom) {
-		if (from < 0) from = 0
-		if (end > len) end = len
-		if (from + step * Infinity <= end) return arr // cannot finish
-	}
-
-	for (var i = from; i < end; i += step) {
-		var ret
-		if (opt.context) {
-			ret = fn.call(opt.context, arr[i], i, arr)
-		} else {
-			ret = fn(arr[i], i, arr)
-		}
-		// default is stop on false
-		if (false !== opt[stopKey] && false === ret) break
-	}
-
-	return arr
-}
 
 _.each = each
 
@@ -1547,36 +1470,152 @@ _.filter = function(arr, fn) {
 }
 
 _.some = function(arr, fn) {
-	var ret = false
-	each(arr, function(item, i, arr) {
-		if (fn(item, i, arr)) {
-			ret = true
-			return false
-		}
-	})
-	return ret
+	return -1 != findIndex(arr, fn)
 }
 
 _.every = function(arr, fn) {
-	var ret = true
+	return -1 == findIndex(arr, negate(fn))
+}
+
+_.reduce = reduce
+
+_.findIndex = findIndex
+
+_.find = function(arr, fn) {
+	var index = _.findIndex(arr, fn)
+	if (-1 != index) {
+		return arr[index]
+	}
+}
+
+_.indexOf = indexOf
+
+_.has = function(val, sub) {
+	return -1 != indexOf(val, sub)
+}
+
+_.toArray = toArray
+
+_.slice = function(arr, start, end) {
+	var ret = []
+	var len = getLength(arr)
+	if (len) {
+		start = start || 0
+		end = end || len
+		if (!(arr instanceof Object)) {
+			// IE8- dom object
+			arr = toArray(arr)
+		}
+		ret = slice.call(arr, start, end)
+	}
+	return ret
+}
+
+_.negate = negate
+
+_.keys = function(hash) {
+	var ret = []
+	if (hash) {
+		for (var key in hash) {
+			if (is.owns(hash, key)) {
+				ret.push(key)
+			}
+		}
+	}
+	return ret
+}
+
+var rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g
+
+_.trim = function(str) {
+	if (null == str) return ''
+	return ('' + str).replace(rtrim, '')
+}
+
+_.noop = function() {}
+
+function getLength(arr) {
+	if (null != arr) return arr.length
+}
+
+function each(arr, fn) {
+	var len = getLength(arr)
+	if (len && is.fn(fn)) {
+		for (var i = 0; i < len; i++) {
+			if (false === fn(arr[i], i, arr)) break
+		}
+	}
+	return arr
+}
+
+function findIndex(arr, fn) {
+	var ret = -1
 	each(arr, function(item, i, arr) {
-		if (!fn(item, i, arr)) {
-			ret = false
+		if (fn(item, i, arr)) {
+			ret = i
 			return false
 		}
 	})
 	return ret
 }
 
-_.find = function(arr, fn) {
-	var ret
-	each(arr, function(item, i, arr) {
-		if (fn(item, i, arr)) {
-			ret = item
-			return false
-		}
+function toArray(arr) {
+	var ret = []
+	each(arr, function(item) {
+		ret.push(item)
 	})
 	return ret
+}
+
+
+function extend(target) {
+	var sources = slice.call(arguments, 1)
+	if (target) {
+		each(sources, function(src) {
+			each(_.keys(src), function(key) {
+				var val = src[key]
+				if (!is.undef(val)) {
+					target[key] = val
+				}
+			})
+		})
+	}
+	return target
+}
+
+function negate(fn) {
+	return function() {
+		return !fn.apply(this, arguments)
+	}
+}
+
+function indexOf(val, sub) {
+	if (is.str(val)) return val.indexOf(sub)
+
+	return findIndex(val, function(item) {
+		return sub == item
+	})
+}
+
+function reduce(arr, fn, prev) {
+	each(arr, function(item, i) {
+		prev = fn(prev, item, i, arr)
+	})
+	return prev
+}
+
+
+},{"min-is":15}],20:[function(require,module,exports){
+var _ = module.exports = require('./')
+
+var each = _.each
+var has = _.has
+var is = _.is
+
+_.reject = function(arr, fn) {
+	return _.filter(arr, function(val, i, arr) {
+		return !fn(val, i, arr)
+	})
 }
 
 _.without = function(arr) {
@@ -1592,7 +1631,13 @@ _.difference = function(arr, other) {
 		}
 	})
 	return ret
-}	
+}
+
+_.pluck = function(arr, key) {
+	return _.map(arr, function(item) {
+		if (item) return item[key]
+	})
+}
 
 _.asyncMap = function(arr, fn, cb) {
 	var ret = []
@@ -1619,39 +1664,6 @@ _.asyncMap = function(arr, fn, cb) {
 	if (!hasStart) cb(null) // empty
 }
 
-function slice(arr, from, end) {
-	var ret = []
-	each(arr, function(item) {
-		ret.push(item)
-	}, {
-		  from: from
-		, end: end
-	})
-	return ret
-}
-
-_.slice = slice
-
-function indexOf(val, sub) {
-	if (is.str(val)) return val.indexOf(sub)
-	var ret = -1
-	each(val, function(item, i) {
-		if (item == sub) {
-			ret = i
-			return false
-		}
-	})
-	return ret
-}
-
-_.indexOf = indexOf
-
-function has(val, sub) {
-	return -1 != indexOf(val, sub)
-}
-
-_.has = has
-
 _.uniq = function(arr) {
 	var ret = []
 	each(arr, function(item) {
@@ -1660,37 +1672,122 @@ _.uniq = function(arr) {
 	return ret
 }
 
-function reduce(arr, fn, prev) {
-	each(arr, function(item, i) {
-		prev = fn(prev, item, i, arr)
+_.flatten = function(arrs) {
+	var ret = []
+	each(arrs, function(arr) {
+		if (is.arraylike(arr)) {
+			each(arr, function(item) {
+				ret.push(item)
+			})
+		} else ret.push(arr)
 	})
-	return prev
+	return ret
 }
 
-_.reduce = reduce
+_.union = function() {
+	return _.uniq(_.flatten(arguments))
+}
+
+
+},{"./":22}],21:[function(require,module,exports){
+var _ = module.exports = require('./')
+
+var is = _.is
+var slice = _.slice
+
+_.bind = function(fn, ctx) {
+	if (is.str(ctx)) {
+		var obj = fn
+		fn = obj[ctx]
+		ctx = obj
+	}
+	if (!is.fn(fn)) return fn
+	var args = slice(arguments, 2)
+	ctx = ctx || this
+	return function() {
+		return fn.apply(ctx, _.flatten([args, arguments]))
+	}
+}
+
+_.inherits = function(ctor, superCtor) {
+	ctor.super_ = superCtor
+	ctor.prototype = _.create(superCtor.prototype, {
+		constructor: ctor
+	})
+}
+
+
+},{"./":22}],22:[function(require,module,exports){
+var cou = require('cou')
+
+var _ = cou.extend(exports, cou)
+
+require('./array')
+require('./object')
+require('./function')
+require('./util')
+require('./string')
+
+
+},{"./array":20,"./function":21,"./object":23,"./string":24,"./util":25,"cou":19}],23:[function(require,module,exports){
+var _ = module.exports = require('./')
+
+var is = _.is
+var each = _.each
 
 _.only = function(obj, keys) {
 	obj = obj || {}
 	if (is.str(keys)) keys = keys.split(/ +/)
-	return reduce(keys, function(ret, key) {
+	return _.reduce(keys, function(ret, key) {
 		if (null != obj[key]) ret[key] = obj[key]
 		return ret
 	}, {})
 }
 
-var rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g
-
-_.trim = function(str) {
-	if (null == str) return ''
-	return ('' + str).replace(rtrim, '')
+_.values = function(hash) {
+	return _.map(_.keys(hash), function(key) {
+		return hash[key]
+	})
 }
+
+_.mapObject = function(obj, fn) {
+	var ret = {}
+	each(_.keys(obj), function(key) {
+		ret[key] = fn(obj[key], key, obj)
+	})
+	return ret
+}
+
+_.get = function(obj, arr) {
+	var hasStart = false
+	var flag = _.every(arr, function(key) {
+		hasStart = true
+		if (null != obj && key in Object(obj)) {
+			obj = obj[key]
+			return true
+		}
+	})
+	if (hasStart && flag) return obj
+}
+
+_.create = (function() {
+	function Object() {} // so it seems like Object.create
+	return function(proto, property) {
+		// not same as Object.create, Object.create(proto, propertyDescription)
+		if ('object' != typeof proto) {
+			// null is ok
+			proto = null
+		}
+		Object.prototype = proto
+		return _.extend(new Object, property)
+	}
+})()
+
+
+},{"./":22}],24:[function(require,module,exports){
+var _ = module.exports = require('./')
 
 _.tostr = tostr
-
-function tostr(str) {
-	if (str || 0 == str) return str + ''
-	return ''
-}
 
 _.capitalize = function(str) {
 	str = tostr(str)
@@ -1711,59 +1808,29 @@ _.camelCase = function(str) {
 	return _.decapitalize(arr.join(''))
 }
 
-_.flatten = function(arrs) {
-	var ret = []
-	each(arrs, function(arr) {
-		if (is.arraylike(arr)) {
-			each(arr, function(item) {
-				ret.push(item)
-			})
-		} else ret.push(arr)
-	})
-	return ret
+function tostr(str) {
+	if (str || 0 == str) return str + ''
+	return ''
 }
 
-_.union = function() {
-	return _.uniq(_.flatten(arguments))
+},{"./":22}],25:[function(require,module,exports){
+var _ = module.exports = require('./')
+
+_.now = function() {
+	return +new Date
 }
 
-_.bind = function(fn, ctx) {
-	if (is.str(ctx)) {
-		var obj = fn
-		fn = obj[ctx]
-		ctx = obj
-	}
-	if (!is.fn(fn)) return fn
-	var args = slice(arguments, 2)
-	ctx = ctx || this
+_.constant = function(val) {
 	return function() {
-		return fn.apply(ctx, _.flatten([args, arguments]))
+		return val
 	}
 }
 
-_.create = (function() {
-	function Object() {} // so it seems like Object.create
-	return function(proto, property) {
-		// not same as Object.create, Object.create(proto, propertyDescription)
-		if ('object' != typeof proto) {
-			// null is ok
-			proto = null
-		}
-		Object.prototype = proto
-		return _.extend(new Object, property)
-	}
-})()
-
-_.inherits = function(ctor, superCtor) {
-	ctor.super_ = superCtor
-	ctor.prototype = _.create(superCtor.prototype, {
-		constructor: ctor
-	})
+_.identity = function(val) {
+	return val
 }
 
-},{"min-is":20}],20:[function(require,module,exports){
-arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}],21:[function(require,module,exports){
+},{"./":22}],26:[function(require,module,exports){
 module.exports = exports = muid
 
 exports.prefix = ''

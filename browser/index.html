@@ -3,9 +3,15 @@
 <div id="box" style='border: 1px solid #000; height: 100px; width: 200px;'>
 	<a style='background: #ccc;'> click in box </a>
 </div>
+<div style="position: relative; width: 200px; height: 200px; top: 100px; left: 100px;">
+	<div id="son">xxxx</div>
+</div>
 <script src="./browser.js"></script>
 <script>
+alert($('#son').offset().left)
+alert($('#son')[0].offsetLeft)
 //alert(a.length)
+/*
 $('#click').on('click', function() {
 	alert('click')
 	return false
@@ -17,7 +23,7 @@ $box.on('click', function() {
 	console.log(this, box)
 	alert(box == this)
 })
-
+*/
 //alert($('<div>')[0].tagName)
 </script>
 <link rel="stylesheet" href="https://rawgit.com/mochajs/mocha/master/mocha.css">
