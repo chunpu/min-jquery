@@ -16,7 +16,7 @@ _.extend(proto, {
 		this.className = _.difference(classes, arguments).join(' ')
 	},
 	contains: function(name) {
-		return _.has(classListGetter(this), name)
+		return _.includes(classListGetter(this), name)
 	},
 	toggle: function(name, force) {
 		var has = proto.contains.call(this, name)

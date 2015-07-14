@@ -249,7 +249,7 @@ function bindQuery2url(url, query) {
     return url + querystring.stringify(query)
 }
 
-},{"../":12,"min-qs":17,"muid":26}],2:[function(require,module,exports){
+},{"../":12,"min-qs":17,"muid":28}],2:[function(require,module,exports){
 var _ = require('min-util')
 var $ = require('../')
 
@@ -268,7 +268,7 @@ _.extend(proto, {
 		this.className = _.difference(classes, arguments).join(' ')
 	},
 	contains: function(name) {
-		return _.has(classListGetter(this), name)
+		return _.includes(classListGetter(this), name)
 	},
 	toggle: function(name, force) {
 		var has = proto.contains.call(this, name)
@@ -301,7 +301,7 @@ $.fn.hasClass = function(name) {
 	})
 }
 
-},{"../":12,"min-util":22}],3:[function(require,module,exports){
+},{"../":12,"min-util":19}],3:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -333,19 +333,11 @@ _.each('width height'.split(' '), function(type) {
 $.fn.offset = function() {
 	var el = this[0]
 	if (!el) return
-	/*
-	return {
-		left: el.offsetLeft,
-		top: el.offsetTop
-	}
-	*/
-	
 	var offset = el.getBoundingClientRect()
 	return _.only(offset, 'left top')
-	
 }
 
-},{"../":12,"min-util":22}],4:[function(require,module,exports){
+},{"../":12,"min-util":19}],4:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -374,7 +366,7 @@ _.each('show hide toggle'.split(' '), function(key) {
     }
 })
 
-},{"../":12,"min-util":22}],5:[function(require,module,exports){
+},{"../":12,"min-util":19}],5:[function(require,module,exports){
 var $ = require('../')
 
 var eventNS = 'events'
@@ -627,7 +619,7 @@ $.fn.extend({
     }
 })
 
-},{"../":12,"min-util":22}],8:[function(require,module,exports){
+},{"../":12,"min-util":19}],8:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var $ = require('../')
@@ -788,7 +780,7 @@ $.fn.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":12,"min-data":13,"min-util":22,"muid":26}],9:[function(require,module,exports){
+},{"../":12,"min-data":13,"min-util":19,"muid":28}],9:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -854,7 +846,7 @@ $.fn.extend({
 	}
 })
 
-},{"../":12,"min-util":22}],10:[function(require,module,exports){
+},{"../":12,"min-util":19}],10:[function(require,module,exports){
 (function (global){
 var $ = require('..')
 var ready = require('min-ready')()
@@ -909,7 +901,7 @@ $.extend({
 		return arr
 	}
 	, grep: _.filter
-	, inArray: _.has
+	, inArray: _.includes
 	, isArray: is.arr
 	, isEmptyObject: is.empty
 	, isFunction: is.fn
@@ -937,13 +929,13 @@ $.extend({
 	, trim: _.trim
 	, type: function(val) {
 		var ret = is._class(val)
-		if (!_.has(knownTypes, ret)) ret = 'object'
+		if (!_.includes(knownTypes, ret)) ret = 'object'
 		return ret
 	}
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":12,"min-parse":16,"min-util":22}],12:[function(require,module,exports){
+},{"../":12,"min-parse":16,"min-util":19}],12:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var parse = require('min-parse')
@@ -996,7 +988,7 @@ proto.extend({jquery: true})
 require('./extend')
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./extend":6,"min-find":14,"min-parse":16,"min-util":22,"muid":26}],13:[function(require,module,exports){
+},{"./extend":6,"min-find":14,"min-parse":16,"min-util":19,"muid":28}],13:[function(require,module,exports){
 var uid = require('muid')
 
 module.exports = Data
@@ -1055,7 +1047,7 @@ proto.discard = function(owner) {
 	}
 }
 
-},{"muid":26}],14:[function(require,module,exports){
+},{"muid":28}],14:[function(require,module,exports){
 (function (global){
 module.exports = exports = find
 
@@ -1338,7 +1330,7 @@ function evalJSON(str) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-is":15,"min-util":22}],17:[function(require,module,exports){
+},{"min-is":15,"min-util":19}],17:[function(require,module,exports){
 exports.parse = function(qs, sep, eq) {
 	qs += ''
 	sep = sep || '&'
@@ -1374,7 +1366,7 @@ exports.stringify = function(obj, sep, eq) {
 	for (var k in obj) {
 		if (Object.hasOwnProperty.call(obj, k)) {
 			var v = obj[k]
-			if (v || '' == v || 0 == v) {
+			if (v || '' === v || 0 === v) {
 				ret.push(encode(k) + eq + encode(v))
 			}
 		}
@@ -1439,7 +1431,10 @@ function exec(val) {
 	}
 }
 
-},{"min-util":22}],19:[function(require,module,exports){
+},{"min-util":19}],19:[function(require,module,exports){
+module.exports = require('./src')
+
+},{"./src":24}],20:[function(require,module,exports){
 var is = require('min-is')
 
 var slice = [].slice
@@ -1448,7 +1443,7 @@ var _ = exports
 
 _.is = is
 
-_.extend = extend
+_.extend = _.assign = extend
 
 _.each = each
 
@@ -1490,7 +1485,7 @@ _.find = function(arr, fn) {
 
 _.indexOf = indexOf
 
-_.has = function(val, sub) {
+_.includes = function(val, sub) {
 	return -1 != indexOf(val, sub)
 }
 
@@ -1513,16 +1508,16 @@ _.slice = function(arr, start, end) {
 
 _.negate = negate
 
-_.keys = function(hash) {
-	var ret = []
-	if (hash) {
-		for (var key in hash) {
-			if (is.owns(hash, key)) {
-				ret.push(key)
-			}
-		}
+_.forIn = forIn
+
+_.keys = keys
+
+_.size = function(arr) {
+	var len = getLength(arr)
+	if (null == len) {
+		len = keys(arr).length
 	}
-	return ret
+	return len
 }
 
 var rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g
@@ -1569,11 +1564,10 @@ function toArray(arr) {
 
 
 function extend(target) {
-	var sources = slice.call(arguments, 1)
 	if (target) {
+		var sources = slice.call(arguments, 1)
 		each(sources, function(src) {
-			each(_.keys(src), function(key) {
-				var val = src[key]
+			forIn(src, function(val, key) {
 				if (!is.undef(val)) {
 					target[key] = val
 				}
@@ -1593,7 +1587,8 @@ function indexOf(val, sub) {
 	if (is.str(val)) return val.indexOf(sub)
 
 	return findIndex(val, function(item) {
-		return sub == item
+		// important!
+		return sub === item
 	})
 }
 
@@ -1604,8 +1599,27 @@ function reduce(arr, fn, prev) {
 	return prev
 }
 
+function forIn(hash, fn) {
+	if (hash) {
+		for (var key in hash) {
+			if (is.owns(hash, key)) {
+				if (false === fn(hash[key], key, hash)) break
+			}
+		}
+	}
+	return hash
+}
 
-},{"min-is":15}],20:[function(require,module,exports){
+function keys(hash) {
+	var ret = []
+	forIn(hash, function(val, key) {
+		ret.push(key)
+	})
+	return ret
+}
+
+
+},{"min-is":15}],21:[function(require,module,exports){
 var _ = module.exports = require('./')
 
 var each = _.each
@@ -1688,8 +1702,103 @@ _.union = function() {
 	return _.uniq(_.flatten(arguments))
 }
 
+_.sample = function(arr, n) {
+	var ret = _.toArray(arr)
+	var len = ret.length
+	var need = Math.min(n || 1, len)
+	for (var i = 0; i < len; i++) {
+		var rand = _.random(i, len - 1)
+		var tmp = ret[rand]
+		ret[rand] = ret[i]
+		ret[i] = tmp
+	}
+	ret.length = need
+	if (null == n) {
+		return ret[0]
+	}
+	return ret
+}
 
-},{"./":22}],21:[function(require,module,exports){
+_.shuffle = function(arr) {
+	return _.sample(arr, Infinity)
+}
+
+_.compact = function(arr) {
+	return _.filter(arr, _.identity)
+}
+
+_.rest = function(arr) {
+	return _.slice(arr, 1)
+}
+
+_.invoke = function() {
+	var args = arguments
+	var arr = args[0]
+	var fn = args[1]
+	var isFunc = is.fn(fn)
+	args = _.slice(args, 2)
+
+	return _.map(arr, function(item) {
+		if (isFunc) {
+			return fn.apply(item, args)
+		}
+		if (null != item) {
+			var method = item[fn]
+			if (is.fn(method)) {
+				return method.apply(item, args)
+			}
+		}
+	})
+}
+
+_.partition = function(arr, fn) {
+	var hash = _.groupBy(arr, function(val, i, arr) {
+		var ret = fn(val, i, arr)
+		if (ret) return 1
+		return 2
+	})
+	return [hash[1], hash[2]]
+}
+
+_.groupBy = function(arr, fn) {
+	var hash = {}
+	_.each(arr, function(val, i, arr) {
+		var ret = fn(val, i, arr)
+		hash[ret] = hash[ret] || []
+		hash[ret].push(val)
+	})
+	return hash
+}
+
+},{"./":24}],22:[function(require,module,exports){
+var _ = require('./')
+var is = _.is
+
+module.exports = Cache
+
+function Cache() {
+	this.data = {}
+}
+
+var proto = Cache.prototype
+
+proto.has = function(key) {
+	return is.owns(this.data, key)
+}
+
+proto.get = function(key) {
+	return this.data[key]
+}
+
+proto.set = function(key, val) {
+	this.data[key] = val
+}
+
+proto['delete'] = function(key) {
+	delete this.data[key]
+}
+
+},{"./":24}],23:[function(require,module,exports){
 var _ = module.exports = require('./')
 
 var is = _.is
@@ -1709,6 +1818,8 @@ _.bind = function(fn, ctx) {
 	}
 }
 
+// from lang.js `Function.prototype.inherits`
+// so belong to function
 _.inherits = function(ctor, superCtor) {
 	ctor.super_ = superCtor
 	ctor.prototype = _.create(superCtor.prototype, {
@@ -1716,11 +1827,136 @@ _.inherits = function(ctor, superCtor) {
 	})
 }
 
+_.delay = function(fn, wait) {
+	var args = _.slice(arguments, 2)
+	return setTimeout(function() {
+		fn.apply(this, args)
+	}, wait)
+}
 
-},{"./":22}],22:[function(require,module,exports){
+_.before = function(n, fn) {
+	return function() {
+		if (n > 1) {
+			n--
+			return fn.apply(this, arguments)
+		}
+	}
+}
+
+_.once = function(fn) {
+	return _.before(2, fn)
+}
+
+_.after = function(n, fn) {
+	return function() {
+		if (n > 1) {
+			n--
+		} else {
+			return fn.apply(this, arguments)
+		}
+	}
+}
+
+_.throttle = function(fn, wait, opt) {
+	wait = wait || 0
+	opt = _.extend({
+		leading: true,
+		trailing: true,
+		maxWait: wait
+	}, opt)
+	return _.debounce(fn, wait, opt)
+}
+
+_.debounce = function(fn, wait, opt) {
+	wait = wait || 0
+	opt = _.extend({
+		leading: false,
+		trailing: true
+	}, opt)
+	var maxWait = opt.maxWait
+	var lastExec = 0 // wait
+	var lastCall = 0 // just for maxWait
+	var now = _.now()
+	var timer
+
+	if (!opt.leading) {
+		lastExec = now
+	}
+
+	function ifIsCD() {
+		if (now - lastExec > wait) return false
+		if (maxWait && now - lastCall > maxWait) return false
+		return true
+	}
+
+	function exec(fn, ctx, args) {
+		lastExec = _.now() // update last exec
+		return fn.apply(ctx, args)
+	}
+
+	function cancel() {
+		if (timer) {
+			clearTimeout(timer)
+			timer = null
+		}
+	}
+
+	function debounced() {
+		now = _.now() // update now
+		var isCD = ifIsCD()
+		lastCall = now // update last call
+		var me = this
+		var args = arguments
+
+		cancel()
+
+		if (!isCD) {
+			exec(fn, me, args)
+		} else {
+			if (opt.trailing) {
+				timer = _.delay(function() {
+					exec(fn, me, args)
+				}, wait)
+			}
+		}
+	}
+
+	debounced.cancel = cancel
+
+	return debounced
+}
+
+function memoize(fn) {
+	var cache = new memoize.Cache
+	function memoized() {
+		var args = arguments
+		var key = args[0]
+		if (!cache.has(key)) {
+			var ret = fn.apply(this, args)
+			cache.set(key, ret)
+		}
+		return cache.get(key)
+	}
+	memoized.cache = cache
+	return memoized
+}
+
+memoize.Cache = require('./cache')
+
+_.memoize = memoize
+
+_.wrap = function(val, fn) {
+	return function() {
+		var args = [val]
+		args.push.apply(args, arguments)
+		return fn.apply(this, args)
+	}
+}
+
+},{"./":24,"./cache":22}],24:[function(require,module,exports){
 var cou = require('cou')
 
-var _ = cou.extend(exports, cou)
+module.exports = cou.extend(_, cou)
 
 require('./array')
 require('./object')
@@ -1728,12 +1964,21 @@ require('./function')
 require('./util')
 require('./string')
 
+_.mixin(_, _)
 
-},{"./array":20,"./function":21,"./object":23,"./string":24,"./util":25,"cou":19}],23:[function(require,module,exports){
+function _(val) {
+	if (!(this instanceof _)) return new _(val)
+	this.__value = val
+	this.__chain = false
+}
+
+
+},{"./array":21,"./function":23,"./object":25,"./string":26,"./util":27,"cou":20}],25:[function(require,module,exports){
 var _ = module.exports = require('./')
 
 var is = _.is
 var each = _.each
+var forIn = _.forIn
 
 _.only = function(obj, keys) {
 	obj = obj || {}
@@ -1744,16 +1989,37 @@ _.only = function(obj, keys) {
 	}, {})
 }
 
-_.values = function(hash) {
-	return _.map(_.keys(hash), function(key) {
-		return hash[key]
+_.values = function(obj) {
+	return _.map(_.keys(obj), function(key) {
+		return obj[key]
 	})
 }
 
-_.mapObject = function(obj, fn) {
+_.pick = function(obj, fn) {
+	if (!is.fn(fn)) {
+		return _.pick(obj, function(val, key) {
+			return key == fn
+		})
+	}
 	var ret = {}
-	each(_.keys(obj), function(key) {
-		ret[key] = fn(obj[key], key, obj)
+	forIn(obj, function(val, key, obj) {
+		if (fn(val, key, obj)) {
+			ret[key] = val
+		}
+	})
+	return ret
+}
+
+_.functions = function(obj) {
+	return _.keys(_.pick(obj, function(val) {
+		return is.fn(val)
+	}))
+}
+
+_.mapObject = _.mapValues = function(obj, fn) {
+	var ret = {}
+	forIn(obj, function(val, key, obj) {
+		ret[key] = fn(val, key, obj)
 	})
 	return ret
 }
@@ -1783,8 +2049,43 @@ _.create = (function() {
 	}
 })()
 
+_.defaults = function() {
+	var args = arguments
+	var target = args[0]
+	var sources = _.slice(args, 1)
+	if (target) {
+		_.each(sources, function(src) {
+			_.mapObject(src, function(val, key) {
+				if (is.undef(target[key])) {
+					target[key] = val
+				}
+			})
+		})
+	}
+	return target
+}
 
-},{"./":22}],24:[function(require,module,exports){
+_.isMatch = function(obj, src) {
+	var ret = true
+	obj = obj || {}
+	forIn(src, function(val, key) {
+		if (val !== obj[key]) {
+			ret = false
+			return false
+		}
+	})
+	return ret
+}
+
+_.toPlainObject = function(val) {
+	var ret = {}
+	forIn(val, function(val, key) {
+		ret[key] = val
+	})
+	return ret
+}
+
+},{"./":24}],26:[function(require,module,exports){
 var _ = module.exports = require('./')
 
 _.tostr = tostr
@@ -1813,8 +2114,9 @@ function tostr(str) {
 	return ''
 }
 
-},{"./":22}],25:[function(require,module,exports){
+},{"./":24}],27:[function(require,module,exports){
 var _ = module.exports = require('./')
+var is = _.is
 
 _.now = function() {
 	return +new Date
@@ -1830,7 +2132,53 @@ _.identity = function(val) {
 	return val
 }
 
-},{"./":22}],26:[function(require,module,exports){
+_.random = function(min, max) {
+	return min + Math.floor(Math.random() * (max - min + 1))
+}
+
+_.mixin = function(dst, src, opt) {
+	var keys = _.functions(src)
+	if (dst) {
+		if (is.fn(dst)) {
+			opt = opt || {}
+			var isChain = !!opt.chain
+			// add to prototype
+			var proto = dst.prototype
+			_.each(keys, function(key) {
+				var fn = src[key]
+				proto[key] = function() {
+					var me = this
+					var args = [me.__value]
+					args.push.apply(args, arguments)
+					var ret = fn.apply(me, args)
+					if (me.__chain) {
+						me.__value = ret
+						return me
+					}
+					return ret
+				}
+			})
+		} else {
+			_.each(keys, function(key) {
+				dst[key] = src[key]
+			})
+		}
+	}
+	return dst
+}
+
+_.chain = function(val) {
+	var ret = _(val)
+	ret.__chain = true
+	return ret
+}
+
+_.value = function() {
+	this.__chain = false
+	return this.__value
+}
+
+},{"./":24}],28:[function(require,module,exports){
 module.exports = exports = muid
 
 exports.prefix = ''

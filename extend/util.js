@@ -17,7 +17,7 @@ $.extend({
 		return arr
 	}
 	, grep: _.filter
-	, inArray: _.has
+	, inArray: _.includes
 	, isArray: is.arr
 	, isEmptyObject: is.empty
 	, isFunction: is.fn
@@ -45,7 +45,7 @@ $.extend({
 	, trim: _.trim
 	, type: function(val) {
 		var ret = is._class(val)
-		if (!_.has(knownTypes, ret)) ret = 'object'
+		if (!_.includes(knownTypes, ret)) ret = 'object'
 		return ret
 	}
 })
