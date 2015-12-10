@@ -1,4 +1,6 @@
 var $ = require('../')
+var _ = require('min-util')
+var is = _.is
 
 var eventNS = 'events'
 
@@ -24,6 +26,16 @@ $.Event = function(src, props) {
 }
 
 $.extend({
+	one: function(elem, type, handler, data, selector) {
+		if (is.fn(handler)) {
+			var wrapper = _.once(function() {
+				$.off(elem, type, wrapper)
+				wrapper = null
+				handler.apply(this, arguments)
+			})
+			return $.on(elem, type, wrapper, data, selector)
+		}
+	},
 	on: function(elem, type, handler, data, selector) {
 		var events = $._data(elem, eventNS)
 		var arr = type.split('.')
@@ -143,6 +155,9 @@ $.fn.extend({
 	},
 	on: function(events, handler) {
 		return this.eventHandler(events, handler, $.on)
+	},
+	one: function(events, handler) {
+		return this.eventHandler(events, handler, $.one)
 	},
 	off: function(events, handler) {
 		return this.eventHandler(events, handler, $.off)

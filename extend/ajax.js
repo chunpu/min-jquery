@@ -70,11 +70,8 @@ function getScript(url, opt, cb) {
 }
 
 function request(url, opt, cb) {
-    // cb can only be called once
-    if (url && 'object' == typeof url) {
-        return $.ajax(url.url, url, cb)
-    }
 
+    // cb can only be called once
     if ('function' == typeof opt) {
         cb = opt
         opt = {}
@@ -110,11 +107,11 @@ function request(url, opt, cb) {
         url = bindQuery2url(url, query)
 
         dataType = 'script'
-        window[jsonpCallback] = function(ret) { // only get first one
+        global[jsonpCallback] = function(ret) { // only get first one
             callback(null, {
                 status: 200
             }, ret)
-            window[jsonpCallback] = null
+            global[jsonpCallback] = null
         }
     }
     if ('script' == dataType) {

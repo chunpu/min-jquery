@@ -16,7 +16,7 @@ _.each('show hide toggle'.split(' '), function(key) {
                 }
             }
             if ('show' == act && isHiden) {
-                var css = $._data(el, display) || 'block'
+                var css = $._data(el, display) || '' // '' clear display value
                 $.css(el, display, css)
             } else if ('hide' == act && !isHiden) {
                 $._data(el, display, old)

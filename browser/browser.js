@@ -1,4 +1,5 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.$ = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function (global){
 var querystring = require('min-qs')
 var $ = require('../')
 var uid = require('muid')
@@ -71,11 +72,8 @@ function getScript(url, opt, cb) {
 }
 
 function request(url, opt, cb) {
-    // cb can only be called once
-    if (url && 'object' == typeof url) {
-        return $.ajax(url.url, url, cb)
-    }
 
+    // cb can only be called once
     if ('function' == typeof opt) {
         cb = opt
         opt = {}
@@ -111,11 +109,11 @@ function request(url, opt, cb) {
         url = bindQuery2url(url, query)
 
         dataType = 'script'
-        window[jsonpCallback] = function(ret) { // only get first one
+        global[jsonpCallback] = function(ret) { // only get first one
             callback(null, {
                 status: 200
             }, ret)
-            window[jsonpCallback] = null
+            global[jsonpCallback] = null
         }
     }
     if ('script' == dataType) {
@@ -249,6 +247,7 @@ function bindQuery2url(url, query) {
     return url + querystring.stringify(query)
 }
 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../":12,"min-qs":17,"muid":28}],2:[function(require,module,exports){
 var _ = require('min-util')
 var $ = require('../')
@@ -356,7 +355,7 @@ _.each('show hide toggle'.split(' '), function(key) {
                 }
             }
             if ('show' == act && isHiden) {
-                var css = $._data(el, display) || 'block'
+                var css = $._data(el, display) || '' // '' clear display value
                 $.css(el, display, css)
             } else if ('hide' == act && !isHiden) {
                 $._data(el, display, old)
@@ -368,6 +367,8 @@ _.each('show hide toggle'.split(' '), function(key) {
 
 },{"../":12,"min-util":19}],5:[function(require,module,exports){
 var $ = require('../')
+var _ = require('min-util')
+var is = _.is
 
 var eventNS = 'events'
 
@@ -393,6 +394,16 @@ $.Event = function(src, props) {
 }
 
 $.extend({
+	one: function(elem, type, handler, data, selector) {
+		if (is.fn(handler)) {
+			var wrapper = _.once(function() {
+				$.off(elem, type, wrapper)
+				wrapper = null
+				handler.apply(this, arguments)
+			})
+			return $.on(elem, type, wrapper, data, selector)
+		}
+	},
 	on: function(elem, type, handler, data, selector) {
 		var events = $._data(elem, eventNS)
 		var arr = type.split('.')
@@ -513,6 +524,9 @@ $.fn.extend({
 	on: function(events, handler) {
 		return this.eventHandler(events, handler, $.on)
 	},
+	one: function(events, handler) {
+		return this.eventHandler(events, handler, $.one)
+	},
 	off: function(events, handler) {
 		return this.eventHandler(events, handler, $.off)
 	},
@@ -538,7 +552,7 @@ function unbind(el, type, fn) {
 	}
 }
 
-},{"../":12}],6:[function(require,module,exports){
+},{"../":12,"min-util":19}],6:[function(require,module,exports){
 require('./util')
 require('./event')
 require('./ready')
