@@ -1121,6 +1121,8 @@ var is = exports
 
 var obj = Object.prototype
 
+var navigator = global.navigator
+
 is.browser = (function() {
 	return global.window == global
 })()
@@ -1128,6 +1130,13 @@ is.browser = (function() {
 // simple modern browser detect
 is.h5 = (function() {
 	if (is.browser && navigator.geolocation) {
+		return true
+	}
+	return false
+})()
+
+is.mobile = (function() {
+	if (is.browser && /mobile/i.test(navigator.userAgent)) {
 		return true
 	}
 	return false
@@ -1448,6 +1457,12 @@ function exec(val) {
 },{"min-util":19}],19:[function(require,module,exports){
 module.exports = require('./src')
 
+/* webpack only
+if (DEBUG && global.console) {
+	console.debug('debug mode')
+}
+*/
+
 },{"./src":24}],20:[function(require,module,exports){
 var is = require('min-is')
 
@@ -1506,16 +1521,17 @@ _.includes = function(val, sub) {
 _.toArray = toArray
 
 _.slice = function(arr, start, end) {
-	var ret = []
+	// support array and string
+	var ret = [] // default return array
 	var len = getLength(arr)
-	if (len) {
+	if (len >= 0) {
 		start = start || 0
 		end = end || len
-		if (!(arr instanceof Object)) {
-			// IE8- dom object
+		// raw array and string use self slice
+		if (!is.fn(arr.slice)) {
 			arr = toArray(arr)
 		}
-		ret = slice.call(arr, start, end)
+		ret = arr.slice(start, end)
 	}
 	return ret
 }
@@ -1526,14 +1542,6 @@ _.forIn = forIn
 
 _.keys = keys
 
-_.size = function(arr) {
-	var len = getLength(arr)
-	if (null == len) {
-		len = keys(arr).length
-	}
-	return len
-}
-
 var rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g
 
 _.trim = function(str) {
@@ -1542,6 +1550,8 @@ _.trim = function(str) {
 }
 
 _.noop = function() {}
+
+_.len = getLength
 
 function getLength(arr) {
 	if (null != arr) return arr.length
@@ -1637,8 +1647,9 @@ function keys(hash) {
 var _ = module.exports = require('./')
 
 var each = _.each
-var has = _.has
+var includes = _.includes
 var is = _.is
+var proto = Array.prototype
 
 _.reject = function(arr, fn) {
 	return _.filter(arr, function(val, i, arr) {
@@ -1654,7 +1665,7 @@ _.without = function(arr) {
 _.difference = function(arr, other) {
 	var ret = []
 	_.each(arr, function(val) {
-		if (!_.has(other, val)) {
+		if (!includes(other, val)) {
 			ret.push(val)
 		}
 	})
@@ -1667,7 +1678,27 @@ _.pluck = function(arr, key) {
 	})
 }
 
+_.size = function(arr) {
+	var len = _.len(arr)
+	if (null == len) {
+		len = _.keys(arr).length
+	}
+	return len
+}
+
+_.first = function(arr) {
+	if (arr) return arr[0]
+}
+
+_.last = function(arr) {
+	var len = _.len(arr)
+	if (len) {
+		return arr[len - 1]
+	}
+}
+
 _.asyncMap = function(arr, fn, cb) {
+	// desperate
 	var ret = []
 	var count = 0
 	var hasDone, hasStart
@@ -1695,7 +1726,7 @@ _.asyncMap = function(arr, fn, cb) {
 _.uniq = function(arr) {
 	var ret = []
 	each(arr, function(item) {
-		if (!has(ret, item)) ret.push(item)
+		if (!includes(ret, item)) ret.push(item)
 	})
 	return ret
 }
@@ -1771,7 +1802,7 @@ _.partition = function(arr, fn) {
 		if (ret) return 1
 		return 2
 	})
-	return [hash[1], hash[2]]
+	return [hash[1] || [], hash[2] || []]
 }
 
 _.groupBy = function(arr, fn) {
@@ -1782,6 +1813,68 @@ _.groupBy = function(arr, fn) {
 		hash[ret].push(val)
 	})
 	return hash
+}
+
+_.range = function() {
+	var args = arguments
+	if (args.length < 2) {
+		return _.range(args[1], args[0])
+	}
+	var start = args[0] || 0
+	var last = args[1] || 0
+	var step = args[2]
+	if (!is.num(step)) {
+		step = 1
+	}
+	var count = last - start
+	if (0 != step) {
+		count = count / step
+	}
+	var ret = []
+	var val = start
+	for (var i = 0; i < count; i++) {
+		ret.push(val)
+		val += step
+	}
+	return ret
+}
+
+_.pullAt = function(arr) {
+	// `_.at` but mutate
+	var indexes = _.slice(arguments, 1)
+	return mutateDifference(arr, indexes)
+}
+
+function mutateDifference(arr, indexes) {
+	var ret = []
+	var len = _.len(indexes)
+	if (len) {
+		indexes = indexes.sort(function(a, b) {
+			return a - b
+		})
+		while (len--) {
+			var index = indexes[len]
+			ret.push(proto.splice.call(arr, index, 1)[0])
+		}
+	}
+	ret.reverse()
+	return ret
+}
+
+_.remove = function(arr, fn) {
+	// `_.filter` but mutate
+	var len = _.len(arr) || 0
+	var indexes = []
+	while (len--) {
+		if (fn(arr[len], len, arr)) {
+			indexes.push(len)
+		}
+	}
+	return mutateDifference(arr, indexes)
+}
+
+_.fill = function(val, start, end) {
+	// TODO
 }
 
 },{"./":24}],22:[function(require,module,exports){
@@ -1967,6 +2060,22 @@ _.wrap = function(val, fn) {
 	}
 }
 
+_.curry = function(fn) {
+	var len = fn.length
+	return setter([])
+
+	function setter(args) {
+		return function() {
+			var arr = args.concat(_.slice(arguments))
+			if (arr.length >= len) {
+				arr.length = len
+				return fn.apply(this, arr)
+			}
+			return setter(arr)
+		}
+	}
+}
+
 },{"./":24,"./cache":22}],24:[function(require,module,exports){
 var cou = require('cou')
 
@@ -2038,16 +2147,55 @@ _.mapObject = _.mapValues = function(obj, fn) {
 	return ret
 }
 
-_.get = function(obj, arr) {
-	var hasStart = false
-	var flag = _.every(arr, function(key) {
-		hasStart = true
-		if (null != obj && key in Object(obj)) {
-			obj = obj[key]
-			return true
+_.get = function(obj, path) {
+	path = toPath(path)
+	if (path.length) {
+		var flag = _.every(path, function(key) {
+			if (null != obj && key in Object(obj)) {
+				obj = obj[key]
+				return true
+			}
+		})
+		if (flag) return obj
+	}
+}
+
+_.has = function(obj, path) {
+	path = toPath(path)
+	if (path.length) {
+		var flag = _.every(path, function(key) {
+			if (null != obj && is.owns(obj, key)) {
+				obj = obj[key]
+				return true
+			}
+		})
+		if (flag) return true
+	}
+	return false
+}
+
+_.set = function(obj, path, val) {
+	path = toPath(path)
+	var cur = obj
+	_.every(path, function(key, i) {
+		if (is.oof(cur)) {
+			if (i + 1 == path.length) {
+				cur[key] = val
+			} else {
+				var item = cur[key]
+				if (null == item) {
+					// fill value with {} or []
+					var item = {}
+					if (~~key == key) {
+						item = []
+					}
+				}
+				cur = cur[key] = item
+				return true
+			}
 		}
 	})
-	if (hasStart && flag) return obj
+	return obj
 }
 
 _.create = (function() {
@@ -2099,10 +2247,38 @@ _.toPlainObject = function(val) {
 	return ret
 }
 
+_.invert = function(obj) {
+	var ret = {}
+	forIn(obj, function(val, key) {
+		ret[val] = key
+	})
+	return ret
+}
+
+// topath, copy from lodash
+
+var rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\n\\]|\\.)*?)\2)\]/g
+var reEscapeChar = /\\(\\)?/g;
+
+function toPath(val) {
+	if (is.array(val)) return val
+	var ret = []
+	_.tostr(val).replace(rePropName, function(match, number, quote, string) {
+		var item = number || match
+		if (quote) {
+			item = string.replace(reEscapeChar, '$1')
+		}
+		ret.push(item)
+	})
+	return ret
+}
+
 },{"./":24}],26:[function(require,module,exports){
 var _ = module.exports = require('./')
 
 _.tostr = tostr
+
+var indexOf = _.indexOf
 
 _.capitalize = function(str) {
 	str = tostr(str)
@@ -2121,6 +2297,49 @@ _.camelCase = function(str) {
 		return _.capitalize(val)
 	})
 	return _.decapitalize(arr.join(''))
+}
+
+_.startsWith = function(str, val) {
+	return 0 == indexOf(str, val)
+}
+
+_.endsWith = function(str, val) {
+	val += '' // null => 'null'
+	return val == _.slice(str, _.len(str) - _.len(val))
+}
+
+_.lower = function(str) {
+	return tostr(str).toLowerCase()
+}
+
+_.upper = function(str) {
+	return tostr(str).toUpperCase()
+}
+
+_.repeat = function(str, count) {
+	return _.map(_.range(count), function() {
+		return str
+	}).join('')
+}
+
+_.padLeft = function(str, len, chars) {
+	str = _.tostr(str)
+	len = len || 0
+	var delta = len - str.length
+	return getPadStr(chars, delta) + str
+}
+
+_.padRight = function(str, len, chars) {
+	str = _.tostr(str)
+	len = len || 0
+	var delta = len - str.length
+	return str + getPadStr(chars, delta)
+}
+
+function getPadStr(chars, len) {
+	chars = _.tostr(chars) || ' ' // '' will never end
+	var count = Math.floor(len / chars.length) + 1
+	return _.repeat(chars, count).slice(0, len)
 }
 
 function tostr(str) {
