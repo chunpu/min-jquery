@@ -248,7 +248,7 @@ function bindQuery2url(url, query) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":12,"min-qs":17,"muid":28}],2:[function(require,module,exports){
+},{"../":12,"min-qs":17,"muid":38}],2:[function(require,module,exports){
 var _ = require('min-util')
 var $ = require('../')
 
@@ -300,7 +300,7 @@ $.fn.hasClass = function(name) {
 	})
 }
 
-},{"../":12,"min-util":19}],3:[function(require,module,exports){
+},{"../":12,"min-util":29}],3:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -336,7 +336,7 @@ $.fn.offset = function() {
 	return _.only(offset, 'left top')
 }
 
-},{"../":12,"min-util":19}],4:[function(require,module,exports){
+},{"../":12,"min-util":29}],4:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -365,7 +365,7 @@ _.each('show hide toggle'.split(' '), function(key) {
     }
 })
 
-},{"../":12,"min-util":19}],5:[function(require,module,exports){
+},{"../":12,"min-util":29}],5:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 var is = _.is
@@ -552,7 +552,7 @@ function unbind(el, type, fn) {
 	}
 }
 
-},{"../":12,"min-util":19}],6:[function(require,module,exports){
+},{"../":12,"min-util":29}],6:[function(require,module,exports){
 require('./util')
 require('./event')
 require('./ready')
@@ -633,7 +633,7 @@ $.fn.extend({
     }
 })
 
-},{"../":12,"min-util":19}],8:[function(require,module,exports){
+},{"../":12,"min-util":29}],8:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var $ = require('../')
@@ -794,7 +794,7 @@ $.fn.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":12,"min-data":13,"min-util":19,"muid":28}],9:[function(require,module,exports){
+},{"../":12,"min-data":13,"min-util":29,"muid":38}],9:[function(require,module,exports){
 var $ = require('../')
 var _ = require('min-util')
 
@@ -860,7 +860,7 @@ $.fn.extend({
 	}
 })
 
-},{"../":12,"min-util":19}],10:[function(require,module,exports){
+},{"../":12,"min-util":29}],10:[function(require,module,exports){
 (function (global){
 var $ = require('..')
 var ready = require('min-ready')()
@@ -872,7 +872,7 @@ var doc = global.document
 
 $.fn.extend({
 	ready: function(fn) {
-		ready(fn)
+		ready.queue(fn)
 		return this
 	}
 })
@@ -881,7 +881,8 @@ setTimeout(bindEvent) // wait all extend ready
 
 function bindEvent() {
 	if (doc && 'complete' == doc.readyState) {
-		return ready.ready($)
+		ready.ctx = $
+		return ready.open()
 	}
 	$(doc).on(docLoad, loaded)
 	$(global).on(winLoad, loaded)
@@ -890,7 +891,8 @@ function bindEvent() {
 function loaded() {
 	$(global).off(docLoad, loaded)
 	$(doc).off(winLoad, loaded)
-	ready.ready()
+	ready.ctx = $
+	ready.open()
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
@@ -949,7 +951,7 @@ $.extend({
 })
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../":12,"min-parse":16,"min-util":19}],12:[function(require,module,exports){
+},{"../":12,"min-parse":16,"min-util":29}],12:[function(require,module,exports){
 (function (global){
 var _ = require('min-util')
 var parse = require('min-parse')
@@ -1002,7 +1004,7 @@ proto.extend({jquery: true})
 require('./extend')
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./extend":6,"min-find":14,"min-parse":16,"min-util":19,"muid":28}],13:[function(require,module,exports){
+},{"./extend":6,"min-find":14,"min-parse":16,"min-util":29,"muid":38}],13:[function(require,module,exports){
 var uid = require('muid')
 
 module.exports = Data
@@ -1061,7 +1063,7 @@ proto.discard = function(owner) {
 	}
 }
 
-},{"muid":28}],14:[function(require,module,exports){
+},{"muid":38}],14:[function(require,module,exports){
 (function (global){
 module.exports = exports = find
 
@@ -1353,7 +1355,7 @@ function evalJSON(str) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-is":15,"min-util":19}],17:[function(require,module,exports){
+},{"min-is":15,"min-util":29}],17:[function(require,module,exports){
 exports.parse = function(qs, sep, eq) {
 	qs += ''
 	sep = sep || '&'
@@ -1398,62 +1400,76 @@ exports.stringify = function(obj, sep, eq) {
 }
 
 },{}],18:[function(require,module,exports){
+(function (global){
 var _ = require('min-util')
 var is = _.is
 
-module.exports = Ready
+var open = 1
+var close = 0
 
-function Ready() {
-	var queue = []
-	function ready(val) {
-		if (is.str(val)) {
-			return ready.call(this, arguments)
-		}
-		if (val) {
-			ready.ctx = this
-			queue.push(val)
-		}
-		if (ready.isReady) {
-			var len = queue.length
-			for (var i = 0; i < len; i++) {
-				exec.call(ready.ctx, queue[i])
-			}
-			queue.length = 0
-		}
-	}
-	ready.ready = function(ctx) {
-		ready.isReady = true
-		if (ctx) {
-			ready.ctx = ctx
-		}
-		ready()
-	}
-	ready.queue = queue
-	return ready
-}
+module.exports = Ctor
 
-function exec(val) {
+function Ctor(queueList) {
 	var me = this
-	if (is.fn(val)) {
-		val.call(me, me)
-	} else if (is.arraylike(val)) {
-		var name = val[0]
-		if (is.str(name)) {
-			// a.b.c.d
-			var arr = name.split('.')
-			var key
-			var fn = me
-			while (arr.length) {
-				key = arr.shift()
-				fn = fn[key] || {}
-			}
-			if (is.fn(fn) && 0 == arr.length) {
-				fn.apply(me, _.slice(val, 1))
-			}
-		}
+	if (!(me instanceof Ctor)) return new Ctor(queueList)
+	me.queueList = queueList || []
+	me.close()
+}
+
+var proto = Ctor.prototype
+
+proto.queue = function() {
+	var me = this
+	var args = arguments
+	if (me.isOpen) {
+		me.exec(args)
+	} else {
+		me.queueList.push(args)
 	}
 }
 
+proto.close = function() {
+	this.isOpen = false
+}
+
+proto.open = function() {
+	this.isOpen = true
+	this.execAll()
+}
+
+proto.execAll = function() {
+	var me = this
+	var queue = me.queueList
+	_.each(queue, function(args) {
+		me.exec(args)
+	})
+	queue.length = 0
+}
+
+proto.exec = function(args) {
+	var func
+	var first = _.first(args)
+	var ctx = this.ctx
+	if (is.fn(first)) {
+		func = first
+	} else {
+		func = _.get(ctx, first)
+	}
+	if (is.fn(func)) {
+		try {
+			func.apply(ctx, _.slice(args, 1))
+		} catch (ignore) {}
+	}
+}
+
+proto.overwriteQueue = function(name) {
+	var me = this
+	global[name] = function() {
+		me.queue.apply(me, arguments)
+	}
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"min-util":19}],19:[function(require,module,exports){
 module.exports = require('./src')
 
@@ -2086,6 +2102,7 @@ require('./object')
 require('./function')
 require('./util')
 require('./string')
+require('./math')
 
 _.mixin(_, _)
 
@@ -2096,7 +2113,405 @@ function _(val) {
 }
 
 
-},{"./array":21,"./function":23,"./object":25,"./string":26,"./util":27,"cou":20}],25:[function(require,module,exports){
+},{"./array":21,"./function":23,"./math":25,"./object":26,"./string":27,"./util":28,"cou":20}],25:[function(require,module,exports){
+var _ = module.exports = require('./')
+
+_.sum = function(arr) {
+	return _.reduce(arr, function(sum, val) {
+		return sum + val
+	}, 0)
+}
+
+_.max = function(arr, fn) {
+	var index = -1
+	var data = -Infinity
+	fn = fn || _.identity
+	_.each(arr, function(val, i) {
+		val = fn(val)
+		if (val > data) {
+			data = val
+			index = i
+		}
+	})
+	if (index > -1) {
+		return arr[index]
+	}
+	return data
+}
+
+_.min = function(arr, fn) {
+	var index = -1
+	var data = Infinity
+	fn = fn || _.identity
+	_.each(arr, function(val, i) {
+		val = fn(val)
+		if (val < data) {
+			data = val
+			index = i
+		}
+	})
+	if (index > -1) {
+		return arr[index]
+	}
+	return data
+}
+
+},{"./":24}],26:[function(require,module,exports){
+var _ = module.exports = require('./')
+
+var is = _.is
+var each = _.each
+var forIn = _.forIn
+
+_.only = function(obj, keys) {
+	obj = obj || {}
+	if (is.str(keys)) keys = keys.split(/ +/)
+	return _.reduce(keys, function(ret, key) {
+		if (null != obj[key]) ret[key] = obj[key]
+		return ret
+	}, {})
+}
+
+_.values = function(obj) {
+	return _.map(_.keys(obj), function(key) {
+		return obj[key]
+	})
+}
+
+_.pick = function(obj, fn) {
+	if (!is.fn(fn)) {
+		return _.pick(obj, function(val, key) {
+			return key == fn
+		})
+	}
+	var ret = {}
+	forIn(obj, function(val, key, obj) {
+		if (fn(val, key, obj)) {
+			ret[key] = val
+		}
+	})
+	return ret
+}
+
+_.functions = function(obj) {
+	return _.keys(_.pick(obj, function(val) {
+		return is.fn(val)
+	}))
+}
+
+_.mapKeys = function(obj, fn) {
+	var ret = {}
+	forIn(obj, function(val, key, obj) {
+		var newKey = fn(val, key, obj)
+		ret[newKey] = val
+	})
+	return ret
+}
+
+_.mapObject = _.mapValues = function(obj, fn) {
+	var ret = {}
+	forIn(obj, function(val, key, obj) {
+		ret[key] = fn(val, key, obj)
+	})
+	return ret
+}
+
+// return value when walk through path, otherwise return empty
+_.get = function(obj, path) {
+	path = toPath(path)
+	if (path.length) {
+		var flag = _.every(path, function(key) {
+			if (null != obj) { // obj can be indexed
+				obj = obj[key]
+				return true
+			}
+		})
+		if (flag) return obj
+	}
+}
+
+_.has = function(obj, path) {
+	path = toPath(path)
+	if (path.length) {
+		var flag = _.every(path, function(key) {
+			if (null != obj && is.owns(obj, key)) {
+				obj = obj[key]
+				return true
+			}
+		})
+		if (flag) return true
+	}
+	return false
+}
+
+_.set = function(obj, path, val) {
+	path = toPath(path)
+	var cur = obj
+	_.every(path, function(key, i) {
+		if (is.oof(cur)) {
+			if (i + 1 == path.length) {
+				cur[key] = val
+			} else {
+				var item = cur[key]
+				if (null == item) {
+					// fill value with {} or []
+					var item = {}
+					if (~~key == key) {
+						item = []
+					}
+				}
+				cur = cur[key] = item
+				return true
+			}
+		}
+	})
+	return obj
+}
+
+_.create = (function() {
+	function Object() {} // so it seems like Object.create
+	return function(proto, property) {
+		// not same as Object.create, Object.create(proto, propertyDescription)
+		if ('object' != typeof proto) {
+			// null is ok
+			proto = null
+		}
+		Object.prototype = proto
+		return _.extend(new Object, property)
+	}
+})()
+
+_.defaults = function() {
+	var args = arguments
+	var target = args[0]
+	var sources = _.slice(args, 1)
+	if (target) {
+		_.each(sources, function(src) {
+			_.mapObject(src, function(val, key) {
+				if (is.undef(target[key])) {
+					target[key] = val
+				}
+			})
+		})
+	}
+	return target
+}
+
+_.isMatch = function(obj, src) {
+	var ret = true
+	obj = obj || {}
+	forIn(src, function(val, key) {
+		if (val !== obj[key]) {
+			ret = false
+			return false
+		}
+	})
+	return ret
+}
+
+_.toPlainObject = function(val) {
+	var ret = {}
+	forIn(val, function(val, key) {
+		ret[key] = val
+	})
+	return ret
+}
+
+_.invert = function(obj) {
+	var ret = {}
+	forIn(obj, function(val, key) {
+		ret[val] = key
+	})
+	return ret
+}
+
+// topath, copy from lodash
+
+var rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\n\\]|\\.)*?)\2)\]/g
+var reEscapeChar = /\\(\\)?/g;
+
+function toPath(val) {
+	if (is.array(val)) return val
+	var ret = []
+	_.tostr(val).replace(rePropName, function(match, number, quote, string) {
+		var item = number || match
+		if (quote) {
+			item = string.replace(reEscapeChar, '$1')
+		}
+		ret.push(item)
+	})
+	return ret
+}
+
+},{"./":24}],27:[function(require,module,exports){
+var _ = module.exports = require('./')
+
+_.tostr = tostr
+
+var indexOf = _.indexOf
+
+_.capitalize = function(str) {
+	str = tostr(str)
+	return str.charAt(0).toUpperCase() + str.substr(1)
+}
+
+_.decapitalize = function(str) {
+	str = tostr(str)
+	return str.charAt(0).toLowerCase() + str.substr(1)
+}
+
+_.camelCase = function(str) {
+	str = tostr(str)
+	var arr = str.split(/[^\w]|_+/)
+	arr = _.map(arr, function(val) {
+		return _.capitalize(val)
+	})
+	return _.decapitalize(arr.join(''))
+}
+
+_.startsWith = function(str, val) {
+	return 0 == indexOf(str, val)
+}
+
+_.endsWith = function(str, val) {
+	val += '' // null => 'null'
+	return val == _.slice(str, _.len(str) - _.len(val))
+}
+
+_.lower = function(str) {
+	return tostr(str).toLowerCase()
+}
+
+_.upper = function(str) {
+	return tostr(str).toUpperCase()
+}
+
+_.repeat = function(str, count) {
+	return _.map(_.range(count), function() {
+		return str
+	}).join('')
+}
+
+_.padLeft = function(str, len, chars) {
+	str = _.tostr(str)
+	len = len || 0
+	var delta = len - str.length
+	return getPadStr(chars, delta) + str
+}
+
+_.padRight = function(str, len, chars) {
+	str = _.tostr(str)
+	len = len || 0
+	var delta = len - str.length
+	return str + getPadStr(chars, delta)
+}
+
+function getPadStr(chars, len) {
+	chars = _.tostr(chars) || ' ' // '' will never end
+	var count = Math.floor(len / chars.length) + 1
+	return _.repeat(chars, count).slice(0, len)
+}
+
+function tostr(str) {
+	if (str || 0 == str) return str + ''
+	return ''
+}
+
+},{"./":24}],28:[function(require,module,exports){
+var _ = module.exports = require('./')
+var is = _.is
+
+_.now = function() {
+	return +new Date
+}
+
+_.constant = function(val) {
+	return function() {
+		return val
+	}
+}
+
+_.identity = function(val) {
+	return val
+}
+
+_.random = function(min, max) {
+	return min + Math.floor(Math.random() * (max - min + 1))
+}
+
+_.mixin = function(dst, src, opt) {
+	var keys = _.functions(src)
+	if (dst) {
+		if (is.fn(dst)) {
+			opt = opt || {}
+			var isChain = !!opt.chain
+			// add to prototype
+			var proto = dst.prototype
+			_.each(keys, function(key) {
+				var fn = src[key]
+				proto[key] = function() {
+					var me = this
+					var args = [me.__value]
+					args.push.apply(args, arguments)
+					var ret = fn.apply(me, args)
+					if (me.__chain) {
+						me.__value = ret
+						return me
+					}
+					return ret
+				}
+			})
+		} else {
+			_.each(keys, function(key) {
+				dst[key] = src[key]
+			})
+		}
+	}
+	return dst
+}
+
+_.chain = function(val) {
+	var ret = _(val)
+	ret.__chain = true
+	return ret
+}
+
+_.value = function() {
+	this.__chain = false
+	return this.__value
+}
+
+},{"./":24}],29:[function(require,module,exports){
+arguments[4][19][0].apply(exports,arguments)
+},{"./src":34,"dup":19}],30:[function(require,module,exports){
+arguments[4][20][0].apply(exports,arguments)
+},{"dup":20,"min-is":15}],31:[function(require,module,exports){
+arguments[4][21][0].apply(exports,arguments)
+},{"./":34,"dup":21}],32:[function(require,module,exports){
+arguments[4][22][0].apply(exports,arguments)
+},{"./":34,"dup":22}],33:[function(require,module,exports){
+arguments[4][23][0].apply(exports,arguments)
+},{"./":34,"./cache":32,"dup":23}],34:[function(require,module,exports){
+var cou = require('cou')
+
+module.exports = cou.extend(_, cou)
+
+require('./array')
+require('./object')
+require('./function')
+require('./util')
+require('./string')
+
+_.mixin(_, _)
+
+function _(val) {
+	if (!(this instanceof _)) return new _(val)
+	this.__value = val
+	this.__chain = false
+}
+
+
+},{"./array":31,"./function":33,"./object":35,"./string":36,"./util":37,"cou":30}],35:[function(require,module,exports){
 var _ = module.exports = require('./')
 
 var is = _.is
@@ -2273,145 +2688,11 @@ function toPath(val) {
 	return ret
 }
 
-},{"./":24}],26:[function(require,module,exports){
-var _ = module.exports = require('./')
-
-_.tostr = tostr
-
-var indexOf = _.indexOf
-
-_.capitalize = function(str) {
-	str = tostr(str)
-	return str.charAt(0).toUpperCase() + str.substr(1)
-}
-
-_.decapitalize = function(str) {
-	str = tostr(str)
-	return str.charAt(0).toLowerCase() + str.substr(1)
-}
-
-_.camelCase = function(str) {
-	str = tostr(str)
-	var arr = str.split(/[^\w]|_+/)
-	arr = _.map(arr, function(val) {
-		return _.capitalize(val)
-	})
-	return _.decapitalize(arr.join(''))
-}
-
-_.startsWith = function(str, val) {
-	return 0 == indexOf(str, val)
-}
-
-_.endsWith = function(str, val) {
-	val += '' // null => 'null'
-	return val == _.slice(str, _.len(str) - _.len(val))
-}
-
-_.lower = function(str) {
-	return tostr(str).toLowerCase()
-}
-
-_.upper = function(str) {
-	return tostr(str).toUpperCase()
-}
-
-_.repeat = function(str, count) {
-	return _.map(_.range(count), function() {
-		return str
-	}).join('')
-}
-
-_.padLeft = function(str, len, chars) {
-	str = _.tostr(str)
-	len = len || 0
-	var delta = len - str.length
-	return getPadStr(chars, delta) + str
-}
-
-_.padRight = function(str, len, chars) {
-	str = _.tostr(str)
-	len = len || 0
-	var delta = len - str.length
-	return str + getPadStr(chars, delta)
-}
-
-function getPadStr(chars, len) {
-	chars = _.tostr(chars) || ' ' // '' will never end
-	var count = Math.floor(len / chars.length) + 1
-	return _.repeat(chars, count).slice(0, len)
-}
-
-function tostr(str) {
-	if (str || 0 == str) return str + ''
-	return ''
-}
-
-},{"./":24}],27:[function(require,module,exports){
-var _ = module.exports = require('./')
-var is = _.is
-
-_.now = function() {
-	return +new Date
-}
-
-_.constant = function(val) {
-	return function() {
-		return val
-	}
-}
-
-_.identity = function(val) {
-	return val
-}
-
-_.random = function(min, max) {
-	return min + Math.floor(Math.random() * (max - min + 1))
-}
-
-_.mixin = function(dst, src, opt) {
-	var keys = _.functions(src)
-	if (dst) {
-		if (is.fn(dst)) {
-			opt = opt || {}
-			var isChain = !!opt.chain
-			// add to prototype
-			var proto = dst.prototype
-			_.each(keys, function(key) {
-				var fn = src[key]
-				proto[key] = function() {
-					var me = this
-					var args = [me.__value]
-					args.push.apply(args, arguments)
-					var ret = fn.apply(me, args)
-					if (me.__chain) {
-						me.__value = ret
-						return me
-					}
-					return ret
-				}
-			})
-		} else {
-			_.each(keys, function(key) {
-				dst[key] = src[key]
-			})
-		}
-	}
-	return dst
-}
-
-_.chain = function(val) {
-	var ret = _(val)
-	ret.__chain = true
-	return ret
-}
-
-_.value = function() {
-	this.__chain = false
-	return this.__value
-}
-
-},{"./":24}],28:[function(require,module,exports){
+},{"./":34}],36:[function(require,module,exports){
+arguments[4][27][0].apply(exports,arguments)
+},{"./":34,"dup":27}],37:[function(require,module,exports){
+arguments[4][28][0].apply(exports,arguments)
+},{"./":34,"dup":28}],38:[function(require,module,exports){
 module.exports = exports = muid
 
 exports.prefix = ''
