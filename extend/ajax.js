@@ -136,10 +136,14 @@ function request(url, opt, cb) {
     }
 }
 
-$.ajax = function(url, opt) {
+$.ajax = function(opt) {
     // TODO fuck the status, statusText, even for jsonp
+	// we use `$.ajax(opt)` instead of `$.ajax(url, opt)`
+	// because zepto only support `$.ajax(opt)`, jquery support both
+	// http://zeptojs.com/#$.ajax
     var ret = {}
-    request(url, opt, function(err, xhr, body) {
+	opt = opt || {}
+    request(opt.url, opt, function(err, xhr, body) {
         xhr = xhr || {}
         var jqxhr = {
             status: xhr.status,
@@ -170,7 +174,8 @@ $.each(['get', 'post'], function(i, method) {
             callback = data
             data = undefined
         }
-        $.ajax(url, {
+        $.ajax({
+			url: url,
             type: method,
             dataType: dataType,
             data: data,
