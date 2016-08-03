@@ -240,12 +240,17 @@ function getXhr(url, opt, cb) {
 }
 
 function bindQuery2url(url, query) {
-    if (-1 == url.indexOf('?')) {
-        url += '?'
+    query = querystring.stringify(query)
+    if (query) {
+        // always query is not empty will change
+        if (-1 == url.indexOf('?')) {
+            url += '?'
+        }
+        var last = url.charAt(url.length - 1)
+        if ('&' != last && '?' != last) {
+            url += '&'
+        }
+        url += query
     }
-    var last = url.charAt(url.length - 1)
-    if ('&' != last && '?' != last) {
-        url += '&'
-    }
-    return url + querystring.stringify(query)
+    return url
 }

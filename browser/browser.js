@@ -912,7 +912,14 @@ function merge(arr) {
 
 var one = {
 	children: function(node) {
-		return node.children
+		var ret = []
+		var son = node.firstChild
+		for (; son; son = son.nextSibling) {
+			if (1 == son.nodeType) {
+				ret.push(son)
+			}
+		}
+		return ret
 	},
 	parent: function(node) {
 		return node.parentNode
